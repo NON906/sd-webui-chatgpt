@@ -100,8 +100,12 @@ def on_ui_tabs():
             else:
                 if isinstance(list(txt2img_args_values)[loop].annotation, str):
                     txt2img_args.append('')
-                else:
+                elif isinstance(list(txt2img_args_values)[loop].annotation, float):
+                    txt2img_args.append(0.0)
+                elif isinstance(list(txt2img_args_values)[loop].annotation, int):
                     txt2img_args.append(0)
+                else:
+                    txt2img_args.append(None)
 
         images, info_js, info_html, comments_html = txt2img(
             *txt2img_args)
@@ -114,7 +118,7 @@ def on_ui_tabs():
 
         chat_history.append((text_input_str, result))
 
-        if prompt is not None:
+        if prompt is not None and prompt != '':
             chatgpt_txt2img(prompt)
 
         return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n'), '', chat_history]
@@ -125,7 +129,7 @@ def on_ui_tabs():
         with gr.Row():
             with gr.Column():
                 chatbot = gr.Chatbot()
-                text_input = gr.Textbox()
+                text_input = gr.Textbox(lines=2)
                 btn_generate = gr.Button(value='Generate', variant='primary')
         with gr.Row():
             gr.Markdown(value='## Last Image')

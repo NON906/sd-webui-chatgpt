@@ -18,7 +18,7 @@ class ChatGptApi:
             "properties": {
                 "prompt": {
                     "type": "string",
-                    "description": 'Prompts for generate images. Prompt is comma separated keywords such as "1girl, school uniform, red ribbon". Recommend around 30 keywords.',
+                    "description": 'Prompts for generate images. Prompt is comma separated keywords such as "1girl, school uniform, red ribbon". Recommend around 30 keywords. If it is not in English, please translate it into English.',
                 },
             },
             "required": ["prompt"],
@@ -67,9 +67,10 @@ class ChatGptApi:
         )
         result = str(self.chatgpt_response["choices"][0]["message"]["content"])
         prompt = None
-        function_call = self.chatgpt_response["choices"][0]["message"]["function_call"]
-        if function_call is not None and function_call["name"] == "txt2img":
-            prompt = json.loads(function_call["arguments"])["prompt"]
+        if "function_call" in self.chatgpt_response["choices"][0]["message"].keys():
+            function_call = self.chatgpt_response["choices"][0]["message"]["function_call"]
+            if function_call is not None and function_call["name"] == "txt2img":
+                prompt = json.loads(function_call["arguments"])["prompt"]
         self.chatgpt_response = None
         self.chatgpt_messages.append({"role": "assistant", "content": result})
         #print(result, file=sys.stderr)
