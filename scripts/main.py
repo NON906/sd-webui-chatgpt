@@ -130,6 +130,19 @@ def on_ui_tabs():
 
         return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n'), '', chat_history]
 
+    def chatgpt_remove_last(text_input_str: str, chat_history):
+        if chat_history is None or len(chat_history) <= 0:
+            return [text_input_str, chat_history]
+
+        ret_text = text_input_str
+        if text_input_str is None or text_input_str == '':
+            ret_text = chat_history[-1][0]
+
+        chat_gpt_api.remove_last_conversation()
+        chat_history = chat_history[:-1]
+        
+        return [ret_text, chat_history]
+
     with gr.Blocks(analytics_enabled=False) as runner_interface:
         with gr.Row():
             gr.Markdown(value='## Chat')
@@ -190,6 +203,9 @@ def on_ui_tabs():
         btn_generate.click(fn=chatgpt_generate,
             inputs=[text_input, chatbot],
             outputs=[image_gr, info_html_gr, comments_html_gr, info_text_gr, text_input, chatbot])
+        btn_remove_last.click(fn=chatgpt_remove_last,
+            inputs=[text_input, chatbot],
+            outputs=[text_input, chatbot])
 
     return [(runner_interface, 'sd-webui-chatgpt', 'chatgpt_interface')]
 
