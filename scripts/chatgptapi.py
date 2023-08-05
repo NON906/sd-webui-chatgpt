@@ -24,13 +24,19 @@ class ChatGptApi:
             "required": ["prompt"],
         },
     }]
+    model = 'gpt-3.5-turbo'
 
-    def __init__(self, apikey=None):
+    def __init__(self, model=None, apikey=None):
+        if model is not None:
+            self.change_model(model)
         if apikey is not None:
             self.change_apikey(apikey)
 
     def change_apikey(self, apikey):
         openai.api_key = apikey
+
+    def change_model(self, model):
+        self.model = model
 
     def load_log(self, log):
         if log is None:
@@ -61,7 +67,7 @@ class ChatGptApi:
             return None
         self.chatgpt_messages.append({"role": "user", "content": content})
         self.chatgpt_response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model=self.model,
             messages=self.chatgpt_messages,
             functions=self.chatgpt_functions
         )

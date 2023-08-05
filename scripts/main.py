@@ -56,10 +56,14 @@ def on_ui_tabs():
         with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_api.txt')) as f:
             apikey = f.read()
 
+    chatgpt_settings = None
+    with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_settings.json')) as f:
+        chatgpt_settings = json.load(f)
+
     if apikey is None or apikey == '':
-        chat_gpt_api = chatgptapi.ChatGptApi()
+        chat_gpt_api = chatgptapi.ChatGptApi(chatgpt_settings['model'])
     else:
-        chat_gpt_api = chatgptapi.ChatGptApi(apikey)
+        chat_gpt_api = chatgptapi.ChatGptApi(chatgpt_settings['model'], apikey)
 
     def chatgpt_txt2img(request_prompt: str):
         txt2img_params = copy.deepcopy(txt2img_params_base)
@@ -199,6 +203,16 @@ def on_ui_tabs():
                     f.write(setting_api)
                 chat_gpt_api.change_apikey(setting_api)
             btn_apikey_save.click(fn=apikey_save, inputs=txt_apikey)
+        with gr.Row():
+            txt_chatgpt_model = gr.Textbox(value=chatgpt_settings['model'], label='ChatGPT Model Name')
+            btn_chatgpt_model_save = gr.Button(value='Save And Reflect', variant='primary')
+            def chatgpt_model_save(setting_model: str):
+                global chat_gpt_api, chatgpt_settings
+                chatgpt_settings['model'] = setting_model
+                with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_settings.json'), 'w') as f:
+                    json.dump(chatgpt_settings, f)
+                chat_gpt_api.change_model(setting_model)
+            btn_chatgpt_model_save.click(fn=chatgpt_model_save, inputs=txt_chatgpt_model)
         with gr.Row():
             lines = txt2img_params_json.count('\n') + 1
             txt_json_settings = gr.Textbox(value=txt2img_params_json, lines=lines, max_lines=lines + 5)
