@@ -211,7 +211,6 @@ def on_ui_tabs():
             txt_apikey = gr.Textbox(value=apikey, label='API Key')
             btn_apikey_save = gr.Button(value='Save And Reflect', variant='primary')
             def apikey_save(setting_api: str):
-                global chat_gpt_api
                 with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_api.txt'), 'w') as f:
                     f.write(setting_api)
                 chat_gpt_api.change_apikey(setting_api)
@@ -220,7 +219,6 @@ def on_ui_tabs():
             txt_chatgpt_model = gr.Textbox(value=chatgpt_settings['model'], label='ChatGPT Model Name')
             btn_chatgpt_model_save = gr.Button(value='Save And Reflect', variant='primary')
             def chatgpt_model_save(setting_model: str):
-                global chat_gpt_api, chatgpt_settings
                 chatgpt_settings['model'] = setting_model
                 with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_settings.json'), 'w') as f:
                     json.dump(chatgpt_settings, f)

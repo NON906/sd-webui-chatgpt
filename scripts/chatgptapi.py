@@ -12,7 +12,7 @@ class ChatGptApi:
     log_file_name = None
     chatgpt_functions = [{
         "name": "txt2img",
-        "description": "Generate image from prompt.",
+        "description": "Generate image from prompt by Stable Diffusion. (Sentences cannot be generated.)",
         "parameters": {
             "type": "object",
             "properties": {
@@ -22,7 +22,7 @@ class ChatGptApi:
                 },
                 "prompt": {
                     "type": "string",
-                    "description": 'Prompts for generate images. Prompt is comma separated keywords such as "1girl, school uniform, red ribbon". Recommend around 30 keywords. If it is not in English, please translate it into English.',
+                    "description": 'Prompt for generate image. Prompt is comma separated keywords such as "1girl, school uniform, red ribbon". List all the appearances of people and things. If it is not in English, please translate it into English (lang:en).',
                 },
             },
             "required": ["prompt"],
@@ -88,7 +88,12 @@ class ChatGptApi:
                 else:
                     ignore_result = True
         self.chatgpt_response = None
-        self.chatgpt_messages.append({"role": "assistant", "content": result})
+        if prompt is None:
+            self.chatgpt_messages.append({"role": "assistant", "content": result})
+        #elif ignore_result:
+        #    self.chatgpt_messages.append({"role": "assistant", "content": "(Generated image by: " + prompt + ")"})
+        else:
+            self.chatgpt_messages.append({"role": "assistant", "content": result + "\n(Generated image by: " + prompt + ")"})
         #print(result, file=sys.stderr)
         if write_log:
             self.write_log()
