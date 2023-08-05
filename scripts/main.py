@@ -22,6 +22,7 @@ comments_html = ''
 last_prompt = ''
 last_seed = -1
 last_image = None
+last_image_name = None
 txt2img_params_json = None
 txt2img_params_base = None
 
@@ -85,7 +86,7 @@ def on_ui_tabs():
                     script_args[args_idx] = lora_block_result[args_pos]
                     args_pos += 1
 
-        global info_js, info_html, comments_html, last_prompt, last_seed, last_image
+        global info_js, info_html, comments_html, last_prompt, last_seed, last_image, last_image_name
 
         txt2img_args_sig = inspect.signature(txt2img)
         txt2img_args_sig_pairs = txt2img_args_sig.parameters
@@ -104,6 +105,8 @@ def on_ui_tabs():
                     txt2img_args.append(0.0)
                 elif isinstance(list(txt2img_args_values)[loop].annotation, int):
                     txt2img_args.append(0)
+                elif isinstance(list(txt2img_args_values)[loop].annotation, bool):
+                    txt2img_args.append(False)
                 else:
                     txt2img_args.append(None)
 
@@ -112,14 +115,18 @@ def on_ui_tabs():
         last_prompt = txt2img_params['prompt']
         last_seed = json.loads(info_js)['seed']
         last_image = images[0]
+        os.makedirs(os.path.join(basedir(), 'outputs', 'chatgpt'), exist_ok=True)
+        last_image_name = os.path.join(basedir(), 'outputs', 'chatgpt', str(uuid.uuid4()).replace('-', '') + '.png')
+        images[0].save(last_image_name)
 
     def chatgpt_generate(text_input_str: str, chat_history):
         result, prompt = chat_gpt_api.send_to_chatgpt(text_input_str)
 
-        chat_history.append((text_input_str, result))
-
         if prompt is not None and prompt != '':
             chatgpt_txt2img(prompt)
+            result = (last_image_name, )
+
+        chat_history.append((text_input_str, result))
 
         return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n'), '', chat_history]
 
@@ -130,7 +137,10 @@ def on_ui_tabs():
             with gr.Column():
                 chatbot = gr.Chatbot()
                 text_input = gr.Textbox(lines=2)
-                btn_generate = gr.Button(value='Generate', variant='primary')
+                with gr.Row():
+                    btn_generate = gr.Button(value='Generate', variant='primary')
+                    btn_regenerate = gr.Button(value='Regenerate')
+                    btn_remove_last = gr.Button(value='Remove last')
         with gr.Row():
             gr.Markdown(value='## Last Image')
         with gr.Row():
