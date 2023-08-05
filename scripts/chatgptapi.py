@@ -16,6 +16,10 @@ class ChatGptApi:
         "parameters": {
             "type": "object",
             "properties": {
+                "message": {
+                    "type": "string",
+                    "description": 'Chat message.',
+                },
                 "prompt": {
                     "type": "string",
                     "description": 'Prompts for generate images. Prompt is comma separated keywords such as "1girl, school uniform, red ribbon". Recommend around 30 keywords. If it is not in English, please translate it into English.',
@@ -71,17 +75,25 @@ class ChatGptApi:
             messages=self.chatgpt_messages,
             functions=self.chatgpt_functions
         )
+        ignore_result = False
         result = str(self.chatgpt_response["choices"][0]["message"]["content"])
         prompt = None
         if "function_call" in self.chatgpt_response["choices"][0]["message"].keys():
             function_call = self.chatgpt_response["choices"][0]["message"]["function_call"]
             if function_call is not None and function_call["name"] == "txt2img":
-                prompt = json.loads(function_call["arguments"])["prompt"]
+                func_args = json.loads(function_call["arguments"])
+                prompt = func_args["prompt"]
+                if "message" in func_args:
+                    result = func_args["message"]
+                else:
+                    ignore_result = True
         self.chatgpt_response = None
         self.chatgpt_messages.append({"role": "assistant", "content": result})
         #print(result, file=sys.stderr)
         if write_log:
             self.write_log()
+        if ignore_result:
+            result = None
         return result, prompt
 
     def remove_last_conversation(self, result=None, write_log=False):

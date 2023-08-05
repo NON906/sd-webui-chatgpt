@@ -123,14 +123,23 @@ def on_ui_tabs():
         last_image_name = os.path.join(basedir(), 'outputs', 'chatgpt', str(uuid.uuid4()).replace('-', '') + '.png')
         images[0].save(last_image_name)
 
+    def append_chat_history(chat_history, text_input_str, result, prompt):
+        global last_image_name
+        if prompt is not None and prompt != '':
+            chatgpt_txt2img(prompt)
+            if result is None:
+                chat_history.append((text_input_str, (last_image_name, )))
+            else:
+                chat_history.append((text_input_str, result))
+                chat_history.append((None, (last_image_name, )))
+        else:
+            chat_history.append((text_input_str, result))
+        return chat_history
+
     def chatgpt_generate(text_input_str: str, chat_history):
         result, prompt = chat_gpt_api.send_to_chatgpt(text_input_str)
 
-        if prompt is not None and prompt != '':
-            chatgpt_txt2img(prompt)
-            result = (last_image_name, )
-
-        chat_history.append((text_input_str, result))
+        chat_history = append_chat_history(chat_history, text_input_str, result, prompt)
 
         return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n'), '', chat_history]
 
@@ -138,29 +147,33 @@ def on_ui_tabs():
         if chat_history is None or len(chat_history) <= 0:
             return [text_input_str, chat_history]
 
-        ret_text = text_input_str
-        if text_input_str is None or text_input_str == '':
-            ret_text = chat_history[-1][0]
+        input_text = chat_history[-1][0]
+        chat_history = chat_history[:-1]
+        if input_text is None:
+            input_text = chat_history[-1][0]
+            chat_history = chat_history[:-1]
 
         chat_gpt_api.remove_last_conversation()
-        chat_history = chat_history[:-1]
+
+        ret_text = text_input_str
+        if text_input_str is None or text_input_str == '':
+            ret_text = input_text
         
         return [ret_text, chat_history]
 
     def chatgpt_regenerate(chat_history):
         if chat_history is not None and len(chat_history) > 0:
             input_text = chat_history[-1][0]
+            chat_history = chat_history[:-1]
+            if input_text is None:
+                input_text = chat_history[-1][0]
+                chat_history = chat_history[:-1]
 
             chat_gpt_api.remove_last_conversation()
-            chat_history = chat_history[:-1]
 
             result, prompt = chat_gpt_api.send_to_chatgpt(input_text)
 
-            if prompt is not None and prompt != '':
-                chatgpt_txt2img(prompt)
-                result = (last_image_name, )
-
-            chat_history.append((input_text, result))
+            chat_history = append_chat_history(chat_history, input_text, result, prompt)
 
         return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n'), chat_history]
 
