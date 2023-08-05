@@ -12,7 +12,7 @@ class ChatGptApi:
     log_file_name = None
     chatgpt_functions = [{
         "name": "txt2img",
-        "description": "Generate image from prompt by Stable Diffusion. (Sentences cannot be generated.)",
+        "description": "Generate image from prompt by Stable Diffusion. (Sentences cannot be generated.) There is no memory function, so please carry over the prompts from past conversations.",
         "parameters": {
             "type": "object",
             "properties": {
