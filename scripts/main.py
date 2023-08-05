@@ -143,6 +143,23 @@ def on_ui_tabs():
         
         return [ret_text, chat_history]
 
+    def chatgpt_regenerate(chat_history):
+        if chat_history is not None and len(chat_history) > 0:
+            input_text = chat_history[-1][0]
+
+            chat_gpt_api.remove_last_conversation()
+            chat_history = chat_history[:-1]
+
+            result, prompt = chat_gpt_api.send_to_chatgpt(input_text)
+
+            if prompt is not None and prompt != '':
+                chatgpt_txt2img(prompt)
+                result = (last_image_name, )
+
+            chat_history.append((input_text, result))
+
+        return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n'), chat_history]
+
     with gr.Blocks(analytics_enabled=False) as runner_interface:
         with gr.Row():
             gr.Markdown(value='## Chat')
@@ -151,7 +168,7 @@ def on_ui_tabs():
                 chatbot = gr.Chatbot()
                 text_input = gr.Textbox(lines=2)
                 with gr.Row():
-                    btn_generate = gr.Button(value='Generate', variant='primary')
+                    btn_generate = gr.Button(value='Chat', variant='primary')
                     btn_regenerate = gr.Button(value='Regenerate')
                     btn_remove_last = gr.Button(value='Remove last')
         with gr.Row():
@@ -203,6 +220,9 @@ def on_ui_tabs():
         btn_generate.click(fn=chatgpt_generate,
             inputs=[text_input, chatbot],
             outputs=[image_gr, info_html_gr, comments_html_gr, info_text_gr, text_input, chatbot])
+        btn_regenerate.click(fn=chatgpt_regenerate,
+            inputs=chatbot,
+            outputs=[image_gr, info_html_gr, comments_html_gr, info_text_gr, chatbot])
         btn_remove_last.click(fn=chatgpt_remove_last,
             inputs=[text_input, chatbot],
             outputs=[text_input, chatbot])
