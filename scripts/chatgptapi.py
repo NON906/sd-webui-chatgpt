@@ -22,7 +22,7 @@ class ChatGptApi:
                 },
                 "prompt": {
                     "type": "string",
-                    "description": 'Prompt for generate image. Prompt is comma separated keywords such as "1girl, school uniform, red ribbon". List all the appearances of people and things. If it is not in English, please translate it into English (lang:en).',
+                    "description": 'Prompt for generate image. Prompt is comma separated keywords such as "1girl, school uniform, red ribbon". If it is not in English, please translate it into English (lang:en).',
                 },
             },
             "required": ["prompt"],
@@ -42,6 +42,9 @@ class ChatGptApi:
     def change_model(self, model):
         self.model = model
 
+    def set_log(self, log_string):
+        self.chatgpt_messages = json.loads(log_string)
+
     def load_log(self, log):
         if log is None:
             return False
@@ -55,16 +58,21 @@ class ChatGptApi:
             pass
         return False
 
-    def write_log(self):
-        if self.log_file_name is None:
-            return        
-        with open(self.log_file_name + '.tmp', 'w', encoding='UTF-8') as f:
-            f.write(json.dumps(self.chatgpt_messages, sort_keys=True, indent=4, ensure_ascii=False))
-        if os.path.isfile(self.log_file_name):
-            os.rename(self.log_file_name, self.log_file_name + '.prev')
-        os.rename(self.log_file_name + '.tmp', self.log_file_name)
-        if os.path.isfile(self.log_file_name + '.prev'):
-            os.remove(self.log_file_name + '.prev')
+    def get_log(self):
+        return json.dumps(self.chatgpt_messages)
+
+    def write_log(self, file_name=None):
+        if file_name is None:
+            file_name = self.log_file_name
+        if file_name is None:
+            return
+        with open(file_name + '.tmp', 'w', encoding='UTF-8') as f:
+            f.write(self.get_log())
+        if os.path.isfile(file_name):
+            os.rename(file_name, file_name + '.prev')
+        os.rename(file_name + '.tmp', file_name)
+        if os.path.isfile(file_name + '.prev'):
+            os.remove(file_name + '.prev')
 
     def send_to_chatgpt(self, content, write_log=False):
         if self.chatgpt_response is not None:
@@ -91,9 +99,9 @@ class ChatGptApi:
         if prompt is None:
             self.chatgpt_messages.append({"role": "assistant", "content": result})
         #elif ignore_result:
-        #    self.chatgpt_messages.append({"role": "assistant", "content": "(Generated image by: " + prompt + ")"})
+        #    self.chatgpt_messages.append({"role": "assistant", "content": "(Generated image by the following prompt: " + prompt + ")"})
         else:
-            self.chatgpt_messages.append({"role": "assistant", "content": result + "\n(Generated image by: " + prompt + ")"})
+            self.chatgpt_messages.append({"role": "assistant", "content": result + "\n(Generated image by the following prompt: " + prompt + ")"})
         #print(result, file=sys.stderr)
         if write_log:
             self.write_log()

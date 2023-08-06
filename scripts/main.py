@@ -177,6 +177,37 @@ def on_ui_tabs():
 
         return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n'), chat_history]
 
+    def chatgpt_load(file_name: str, chat_history):
+        if os.path.dirname(file_name) == '':
+            file_name = os.path.join(basedir(), 'outputs', 'chatgpt', 'chat', file_name)
+        if os.path.isfile(file_name) == '':
+            print(file_name + ' is not exists.')
+            return chat_history
+
+        with open(file_name, 'r', encoding='UTF-8') as f:
+            loaded_json = json.load(f)
+
+        chat_history = loaded_json['gradio']
+
+        chat_gpt_api.set_log(loaded_json['chatgpt'])
+
+        return chat_history
+
+    def chatgpt_save(file_name: str, chat_history):
+        if os.path.dirname(file_name) == '':
+            os.makedirs(os.path.join(basedir(), 'outputs', 'chatgpt', 'chat'), exist_ok=True)
+            file_name = os.path.join(basedir(), 'outputs', 'chatgpt', 'chat', file_name)
+
+        json_dict = {
+            'gradio': chat_history,
+            'chatgpt': chat_gpt_api.get_log()
+        }
+
+        with open(file_name, 'w', encoding='UTF-8') as f:
+            json.dump(json_dict, f)
+
+        print(file_name + ' is saved.')
+
     with gr.Blocks(analytics_enabled=False) as runner_interface:
         with gr.Row():
             gr.Markdown(value='## Chat')
@@ -188,6 +219,12 @@ def on_ui_tabs():
                     btn_generate = gr.Button(value='Chat', variant='primary')
                     btn_regenerate = gr.Button(value='Regenerate')
                     btn_remove_last = gr.Button(value='Remove last')
+                with gr.Row():
+                    txt_file_path = gr.Textbox(label='File name or path')
+                    btn_load = gr.Button(value='Load')
+                    btn_load.click(fn=chatgpt_load, inputs=[txt_file_path, chatbot], outputs=chatbot)
+                    btn_save = gr.Button(value='Save')
+                    btn_save.click(fn=chatgpt_save, inputs=[txt_file_path, chatbot])
         with gr.Row():
             gr.Markdown(value='## Last Image')
         with gr.Row():
