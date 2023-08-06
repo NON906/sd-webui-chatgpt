@@ -18,7 +18,7 @@ class ChatGptApi:
             "properties": {
                 "message": {
                     "type": "string",
-                    "description": 'Chat message.',
+                    "description": 'Chat message. Displayed before the image.',
                 },
                 "prompt": {
                     "type": "string",
