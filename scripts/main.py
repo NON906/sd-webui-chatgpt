@@ -141,7 +141,7 @@ def on_ui_tabs():
 
         chat_history = append_chat_history(chat_history, text_input_str, result, prompt)
 
-        return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n'), '', chat_history]
+        return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n').replace('&lt;', '<').replace('&gt;', '>'), '', chat_history]
 
     def chatgpt_remove_last(text_input_str: str, chat_history):
         if chat_history is None or len(chat_history) <= 0:
@@ -175,7 +175,7 @@ def on_ui_tabs():
 
             chat_history = append_chat_history(chat_history, input_text, result, prompt)
 
-        return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n'), chat_history]
+        return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n').replace('&lt;', '<').replace('&gt;', '>'), chat_history]
 
     def chatgpt_load(file_name: str, chat_history):
         if os.path.dirname(file_name) == '':
