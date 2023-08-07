@@ -207,7 +207,7 @@ def on_ui_tabs():
         with gr.Row():
             with gr.Column():
                 chatbot = gr.Chatbot()
-                text_input = gr.Textbox(lines=2)
+                text_input = gr.Textbox(lines=2, label='')
                 with gr.Row():
                     btn_generate = gr.Button(value='Chat', variant='primary')
                     btn_regenerate = gr.Button(value='Regenerate')
@@ -256,7 +256,7 @@ def on_ui_tabs():
             btn_chatgpt_model_save.click(fn=chatgpt_model_save, inputs=txt_chatgpt_model)
         with gr.Row():
             lines = txt2img_params_json.count('\n') + 1
-            txt_json_settings = gr.Textbox(value=txt2img_params_json, lines=lines, max_lines=lines + 5)
+            txt_json_settings = gr.Textbox(value=txt2img_params_json, lines=lines, max_lines=lines + 5, label='txt2img')
         with gr.Row():
             with gr.Column():
                 btn_settings_save = gr.Button(value='Save', variant='primary')
