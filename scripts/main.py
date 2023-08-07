@@ -32,18 +32,6 @@ def init_txt2img_params():
         txt2img_params_json = f.read()
         txt2img_params_base = json.loads(txt2img_params_json)
 
-def load_lora_block_weight():
-    path_root = basedir()
-    extpath = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "lbwpresets.txt")
-    extpathe = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "elempresets.txt")
-
-    with open(extpath,encoding="utf-8") as f:
-        lbwpresets = f.read()
-    with open(extpathe,encoding="utf-8") as f:
-        elempresets = f.read()
-
-    return lbwpresets,True,"Disable","","","","","","","","",1,"",20,False,elempresets,False
-
 def on_ui_tabs():
     global txt2img_params_base
 
@@ -79,16 +67,19 @@ def on_ui_tabs():
                 sampler_index = sampler_loop_index
         txt2img_params['sampler_index'] = sampler_index
 
-        script_args = [0]
-        for obj in modules.scripts.scripts_txt2img.alwayson_scripts:
-            if "lora_block_weight" in obj.filename:
-                script = obj
-                lora_block_result = load_lora_block_weight()
-                args_pos = 0
-                script_args.extend([None for _ in range(script.args_to - 1)])
-                for args_idx in range(script.args_from, script.args_to, 1):
-                    script_args[args_idx] = lora_block_result[args_pos]
-                    args_pos += 1
+        last_arg_index = 1
+        for script in modules.scripts.scripts_txt2img.scripts:
+            if last_arg_index < script.args_to:
+                last_arg_index = script.args_to
+        script_args = [None]*last_arg_index
+        script_args[0] = 0
+        with gr.Blocks(): 
+            for script in modules.scripts.scripts_txt2img.scripts:
+                if script.ui(False):
+                    ui_default_values = []
+                    for elem in script.ui(False):
+                        ui_default_values.append(elem.value)
+                    script_args[script.args_from:script.args_to] = ui_default_values
 
         global info_js, info_html, comments_html, last_prompt, last_seed, last_image, last_image_name
 
@@ -100,6 +91,8 @@ def on_ui_tabs():
         for loop, name in enumerate(txt2img_args_names):
             if name == 'args':
                 txt2img_args.extend(script_args)
+            elif name == 'request':
+                txt2img_args.append(gr.Request())
             elif name in txt2img_params:
                 txt2img_args.append(txt2img_params[name])
             else:
