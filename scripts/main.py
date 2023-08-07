@@ -26,6 +26,9 @@ last_image_name = None
 txt2img_params_json = None
 txt2img_params_base = None
 
+public_ui = {}
+public_ui_value = {}
+
 def init_txt2img_params():
     global txt2img_params_json, txt2img_params_base
     with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_txt2img.json')) as f:
@@ -33,7 +36,7 @@ def init_txt2img_params():
         txt2img_params_base = json.loads(txt2img_params_json)
 
 def on_ui_tabs():
-    global txt2img_params_base
+    global txt2img_params_base, public_ui, public_ui_value
 
     init_txt2img_params()
     last_prompt = txt2img_params_base['prompt']
@@ -249,7 +252,7 @@ def on_ui_tabs():
         with gr.Row():
             gr.Markdown(value='## Settings')
         with gr.Row():
-            txt_apikey = gr.Textbox(value=apikey, label='API Key')
+            txt_apikey = gr.Textbox(value='', label='API Key')
             btn_apikey_save = gr.Button(value='Save And Reflect', variant='primary')
             def apikey_save(setting_api: str):
                 with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_api.txt'), 'w') as f:
@@ -257,7 +260,7 @@ def on_ui_tabs():
                 chat_gpt_api.change_apikey(setting_api)
             btn_apikey_save.click(fn=apikey_save, inputs=txt_apikey)
         with gr.Row():
-            txt_chatgpt_model = gr.Textbox(value=chatgpt_settings['model'], label='ChatGPT Model Name')
+            txt_chatgpt_model = gr.Textbox(value='', label='ChatGPT Model Name')
             btn_chatgpt_model_save = gr.Button(value='Save And Reflect', variant='primary')
             def chatgpt_model_save(setting_model: str):
                 chatgpt_settings['model'] = setting_model
@@ -266,8 +269,7 @@ def on_ui_tabs():
                 chat_gpt_api.change_model(setting_model)
             btn_chatgpt_model_save.click(fn=chatgpt_model_save, inputs=txt_chatgpt_model)
         with gr.Row():
-            lines = txt2img_params_json.count('\n') + 1
-            txt_json_settings = gr.Textbox(value=txt2img_params_json, lines=lines, max_lines=lines + 5, label='txt2img')
+            txt_json_settings = gr.Textbox(value='', label='txt2img')
         with gr.Row():
             with gr.Column():
                 btn_settings_save = gr.Button(value='Save', variant='primary')
@@ -293,6 +295,24 @@ def on_ui_tabs():
             inputs=[text_input, chatbot],
             outputs=[text_input, chatbot])
 
+    public_ui['apikey'] = txt_apikey
+    public_ui_value['apikey'] = apikey
+    public_ui['chatgpt_model'] = txt_chatgpt_model
+    public_ui_value['chatgpt_model'] = chatgpt_settings['model']
+    public_ui['json_settings'] = txt_json_settings
+    public_ui_value['json_settings'] = txt2img_params_json
+
     return [(runner_interface, 'sd-webui-chatgpt', 'chatgpt_interface')]
 
+def on_started(_0, _1):
+    global public_ui, public_ui_value
+
+    for name in public_ui.keys():
+        public_ui[name].value = public_ui_value[name]
+
+    lines = public_ui_value['json_settings'].count('\n') + 1
+    public_ui['json_settings'].lines = lines
+    public_ui['json_settings'].max_lines = lines + 5
+
 script_callbacks.on_ui_tabs(on_ui_tabs)
+script_callbacks.on_app_started(on_started)
