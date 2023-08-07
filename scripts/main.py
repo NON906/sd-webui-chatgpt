@@ -71,15 +71,15 @@ def on_ui_tabs():
                     sampler_index = sampler_loop_index
             txt2img_params['sampler_index'] = sampler_index
 
-        if isinstance(txt2img_params['hr_sampler_index'], str):
-            if 'hr_sampler_index' in txt2img_params.keys():
+        if 'hr_sampler_index' in txt2img_params.keys():
+            if isinstance(txt2img_params['hr_sampler_index'], str):
                 hr_sampler_index = 0
                 for sampler_loop_index, sampler_loop in enumerate(sd_samplers.samplers):
                     if sampler_loop.name == txt2img_params['hr_sampler_index']:
                         hr_sampler_index = txt2img_params['hr_sampler_index']
                 txt2img_params['hr_sampler_index'] = hr_sampler_index
-            else:
-                txt2img_params['hr_sampler_index'] = 0
+        else:
+            txt2img_params['hr_sampler_index'] = 0
 
         last_arg_index = 1
         for script in modules.scripts.scripts_txt2img.scripts:
@@ -100,7 +100,7 @@ def on_ui_tabs():
         txt2img_args_sig = inspect.signature(txt2img)
         txt2img_args_sig_pairs = txt2img_args_sig.parameters
         txt2img_args_names = txt2img_args_sig_pairs.keys()
-        txt2img_args_values = txt2img_args_sig_pairs.values()
+        txt2img_args_values = list(txt2img_args_sig_pairs.values())
         txt2img_args = []
         for loop, name in enumerate(txt2img_args_names):
             if name == 'args':
@@ -109,14 +109,16 @@ def on_ui_tabs():
                 txt2img_args.append(gr.Request())
             elif name in txt2img_params:
                 txt2img_args.append(txt2img_params[name])
+            elif txt2img_args_values[loop].default != inspect.Signature.empty:
+                txt2img_args.append(txt2img_args_values[loop].default)
             else:
-                if isinstance(list(txt2img_args_values)[loop].annotation, str):
+                if isinstance(txt2img_args_values[loop].annotation, str):
                     txt2img_args.append('')
-                elif isinstance(list(txt2img_args_values)[loop].annotation, float):
+                elif isinstance(txt2img_args_values[loop].annotation, float):
                     txt2img_args.append(0.0)
-                elif isinstance(list(txt2img_args_values)[loop].annotation, int):
+                elif isinstance(txt2img_args_values[loop].annotation, int):
                     txt2img_args.append(0)
-                elif isinstance(list(txt2img_args_values)[loop].annotation, bool):
+                elif isinstance(txt2img_args_values[loop].annotation, bool):
                     txt2img_args.append(False)
                 else:
                     txt2img_args.append(None)
