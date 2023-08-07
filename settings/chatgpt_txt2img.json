@@ -24,5 +24,8 @@
     "hr_second_pass_steps": 0,
     "hr_resize_x": 0,
     "hr_resize_y": 0,
+    "hr_sampler_index": "",
+    "hr_prompt": "",
+    "hr_negative_prompt": "",
     "override_settings_texts": ""
 }

@@ -61,11 +61,22 @@ def on_ui_tabs():
         else:
             txt2img_params['prompt'] += ', ' + request_prompt
 
-        sampler_index = 0
-        for sampler_loop_index, sampler_loop in enumerate(sd_samplers.samplers):
-            if sampler_loop.name == txt2img_params['sampler_index']:
-                sampler_index = sampler_loop_index
-        txt2img_params['sampler_index'] = sampler_index
+        if isinstance(txt2img_params['sampler_index'], str):
+            sampler_index = 0
+            for sampler_loop_index, sampler_loop in enumerate(sd_samplers.samplers):
+                if sampler_loop.name == txt2img_params['sampler_index']:
+                    sampler_index = sampler_loop_index
+            txt2img_params['sampler_index'] = sampler_index
+
+        if isinstance(txt2img_params['hr_sampler_index'], str):
+            if 'hr_sampler_index' in txt2img_params.keys():
+                hr_sampler_index = 0
+                for sampler_loop_index, sampler_loop in enumerate(sd_samplers.samplers):
+                    if sampler_loop.name == txt2img_params['hr_sampler_index']:
+                        hr_sampler_index = txt2img_params['hr_sampler_index']
+                txt2img_params['hr_sampler_index'] = hr_sampler_index
+            else:
+                txt2img_params['hr_sampler_index'] = 0
 
         last_arg_index = 1
         for script in modules.scripts.scripts_txt2img.scripts:
