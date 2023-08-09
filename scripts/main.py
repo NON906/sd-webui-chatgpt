@@ -9,6 +9,7 @@ import uuid
 import copy
 import inspect
 import gradio as gr
+from PIL import PngImagePlugin
 from modules.scripts import basedir
 from modules.txt2img import txt2img
 from modules import script_callbacks, sd_samplers
@@ -21,7 +22,6 @@ info_html = ''
 comments_html = ''
 last_prompt = ''
 last_seed = -1
-last_image = None
 last_image_name = None
 txt2img_params_json = None
 txt2img_params_base = None
@@ -95,7 +95,7 @@ def on_ui_tabs():
                         ui_default_values.append(elem.value)
                     script_args[script.args_from:script.args_to] = ui_default_values
 
-        global info_js, info_html, comments_html, last_prompt, last_seed, last_image, last_image_name
+        global info_js, info_html, comments_html, last_prompt, last_seed, last_image_name
 
         txt2img_args_sig = inspect.signature(txt2img)
         txt2img_args_sig_pairs = txt2img_args_sig.parameters
@@ -126,11 +126,19 @@ def on_ui_tabs():
         images, info_js, info_html, comments_html = txt2img(
             *txt2img_args)
         last_prompt = txt2img_params['prompt']
-        last_seed = json.loads(info_js)['seed']
-        last_image = images[0]
+        image_info = json.loads(info_js)
+        last_seed = image_info['seed']
         os.makedirs(os.path.join(basedir(), 'outputs', 'chatgpt'), exist_ok=True)
         last_image_name = os.path.join(basedir(), 'outputs', 'chatgpt', str(uuid.uuid4()).replace('-', '') + '.png')
-        images[0].save(last_image_name)
+
+        use_metadata = False
+        metadata = PngImagePlugin.PngInfo()
+        for key, value in image_info.items():
+            if isinstance(key, str) and isinstance(value, str):
+                metadata.add_text(key, value)
+                use_metadata = True
+
+        images[0].save(last_image_name, pnginfo=(metadata if use_metadata else None))
 
     def append_chat_history(chat_history, text_input_str, result, prompt):
         global last_image_name
@@ -150,7 +158,7 @@ def on_ui_tabs():
 
         chat_history = append_chat_history(chat_history, text_input_str, result, prompt)
 
-        return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n').replace('&lt;', '<').replace('&gt;', '>'), '', chat_history]
+        return [last_image_name, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n').replace('&lt;', '<').replace('&gt;', '>'), '', chat_history]
 
     def chatgpt_remove_last(text_input_str: str, chat_history):
         if chat_history is None or len(chat_history) <= 0:
@@ -184,7 +192,7 @@ def on_ui_tabs():
 
             chat_history = append_chat_history(chat_history, input_text, result, prompt)
 
-        return [last_image, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n').replace('&lt;', '<').replace('&gt;', '>'), chat_history]
+        return [last_image_name, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n').replace('&lt;', '<').replace('&gt;', '>'), chat_history]
 
     def chatgpt_load(file_name: str, chat_history):
         if os.path.dirname(file_name) == '':
@@ -238,7 +246,7 @@ def on_ui_tabs():
             gr.Markdown(value='## Last Image')
         with gr.Row():
             with gr.Column():
-                image_gr = gr.Image(type='pil', interactive=False)
+                image_gr = gr.Image(type='filepath', interactive=False)
             with gr.Column():
                 info_text_gr = gr.Textbox(visible=False, interactive=False)
                 info_html_gr = gr.HTML(info_html)
