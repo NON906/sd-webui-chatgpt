@@ -8,6 +8,7 @@ import threading
 import uuid
 import copy
 import inspect
+import sys
 import gradio as gr
 from PIL import PngImagePlugin
 from modules.scripts import basedir
@@ -15,6 +16,7 @@ from modules.txt2img import txt2img
 from modules import script_callbacks, sd_samplers
 import modules.scripts
 from modules import generation_parameters_copypaste as params_copypaste
+from modules.paths_internal import extensions_dir
 from scripts import chatgptapi
 
 info_js = ''
@@ -29,9 +31,21 @@ txt2img_params_base = None
 public_ui = {}
 public_ui_value = {}
 
+def get_path_settings_file(file_name: str):
+    ret = os.path.join(os.path.dirname(__file__), '..', 'settings', file_name)
+    if os.path.isfile(ret):
+        return ret
+    ret = os.path.join(basedir(), 'settings', file_name)
+    if os.path.isfile(ret):
+        return ret
+    ret = os.path.join(extensions_dir, 'sd-webui-chatgpt', 'settings', file_name)
+    if os.path.isfile(ret):
+        return ret
+    return None
+
 def init_txt2img_params():
     global txt2img_params_json, txt2img_params_base
-    with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_txt2img.json')) as f:
+    with open(get_path_settings_file('chatgpt_txt2img.json')) as f:
         txt2img_params_json = f.read()
         txt2img_params_base = json.loads(txt2img_params_json)
 
@@ -43,12 +57,13 @@ def on_ui_tabs():
     last_seed = txt2img_params_base['seed']
 
     apikey = None
-    if os.path.isfile(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_api.txt')):
-        with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_api.txt')) as f:
+    apikey_file_path = get_path_settings_file('chatgpt_api.txt')
+    if apikey_file_path is not None:
+        with open(apikey_file_path) as f:
             apikey = f.read()
 
     chatgpt_settings = None
-    with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_settings.json')) as f:
+    with open(get_path_settings_file('chatgpt_settings.json')) as f:
         chatgpt_settings = json.load(f)
 
     if apikey is None or apikey == '':
@@ -265,7 +280,10 @@ def on_ui_tabs():
             txt_apikey = gr.Textbox(value='', label='API Key')
             btn_apikey_save = gr.Button(value='Save And Reflect', variant='primary')
             def apikey_save(setting_api: str):
-                with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_api.txt'), 'w') as f:
+                save_file_name = get_path_settings_file('chatgpt_api.txt')
+                if save_file_name is None:
+                    save_file_name = os.path.join(os.path.dirname(get_path_settings_file('chatgpt_settings.json')), 'chatgpt_api.txt')
+                with open(save_file_name, 'w') as f:
                     f.write(setting_api)
                 chat_gpt_api.change_apikey(setting_api)
             btn_apikey_save.click(fn=apikey_save, inputs=txt_apikey)
@@ -274,7 +292,7 @@ def on_ui_tabs():
             btn_chatgpt_model_save = gr.Button(value='Save And Reflect', variant='primary')
             def chatgpt_model_save(setting_model: str):
                 chatgpt_settings['model'] = setting_model
-                with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_settings.json'), 'w') as f:
+                with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
                     json.dump(chatgpt_settings, f)
                 chat_gpt_api.change_model(setting_model)
             btn_chatgpt_model_save.click(fn=chatgpt_model_save, inputs=txt_chatgpt_model)
@@ -284,7 +302,7 @@ def on_ui_tabs():
             with gr.Column():
                 btn_settings_save = gr.Button(value='Save', variant='primary')
                 def json_save(settings: str):
-                    with open(os.path.join(os.path.dirname(__file__), '..', 'settings', 'chatgpt_txt2img.json'), 'w') as f:
+                    with open(get_path_settings_file('chatgpt_txt2img.json'), 'w') as f:
                         f.write(settings)
                 btn_settings_save.click(fn=json_save, inputs=txt_json_settings)
             with gr.Column():
