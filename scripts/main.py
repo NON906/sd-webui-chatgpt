@@ -222,12 +222,14 @@ def on_ui_tabs():
         with open(file_name, 'r', encoding='UTF-8') as f:
             loaded_json = json.load(f)
 
-        chat_history = loaded_json['gradio']
         for key in loaded_json['images'].keys():
             if os.path.isfile(loaded_json['images'][key]):
                 loaded_json['gradio'][int(key)] = (loaded_json['gradio'][int(key)][0], (loaded_json['images'][key], ))
             else:
                 loaded_json['gradio'][int(key)] = (loaded_json['gradio'][int(key)][0], '(Image is deleted.)')
+
+        chat_history = loaded_json['gradio']
+        chat_history_images = loaded_json['images']
 
         chat_gpt_api.set_log(loaded_json['chatgpt'])
 
