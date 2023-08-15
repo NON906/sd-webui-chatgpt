@@ -224,7 +224,10 @@ def on_ui_tabs():
 
         chat_history = loaded_json['gradio']
         for key in loaded_json['images'].keys():
-            loaded_json['gradio'][int(key)] = (loaded_json['gradio'][int(key)][0], (loaded_json['images'][key], ))
+            if os.path.isfile(loaded_json['images'][key]):
+                loaded_json['gradio'][int(key)] = (loaded_json['gradio'][int(key)][0], (loaded_json['images'][key], ))
+            else:
+                loaded_json['gradio'][int(key)] = (loaded_json['gradio'][int(key)][0], '(Image is deleted.)')
 
         chat_gpt_api.set_log(loaded_json['chatgpt'])
 
