@@ -27,6 +27,7 @@ last_seed = -1
 last_image_name = None
 txt2img_params_json = None
 txt2img_params_base = None
+chat_history_images = {}
 
 public_ui = {}
 public_ui_value = {}
@@ -156,13 +157,15 @@ def on_ui_tabs():
         images[0].save(last_image_name, pnginfo=(metadata if use_metadata else None))
 
     def append_chat_history(chat_history, text_input_str, result, prompt):
-        global last_image_name
+        global last_image_name, chat_history_images
         if prompt is not None and prompt != '':
             chatgpt_txt2img(prompt)
             if result is None:
+                chat_history_images[len(chat_history)] = last_image_name
                 chat_history.append((text_input_str, (last_image_name, )))
             else:
                 chat_history.append((text_input_str, result))
+                chat_history_images[len(chat_history)] = last_image_name
                 chat_history.append((None, (last_image_name, )))
         else:
             chat_history.append((text_input_str, result))
@@ -220,6 +223,8 @@ def on_ui_tabs():
             loaded_json = json.load(f)
 
         chat_history = loaded_json['gradio']
+        for key in loaded_json['images'].keys():
+            loaded_json['gradio'][int(key)] = (loaded_json['gradio'][int(key)][0], (loaded_json['images'][key], ))
 
         chat_gpt_api.set_log(loaded_json['chatgpt'])
 
@@ -232,6 +237,7 @@ def on_ui_tabs():
 
         json_dict = {
             'gradio': chat_history,
+            'images': chat_history_images,
             'chatgpt': chat_gpt_api.get_log()
         }
 
