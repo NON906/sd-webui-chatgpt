@@ -115,3 +115,7 @@ class ChatGptApi:
             if write_log:
                 self.write_log()
 
+    def clear(self):
+        self.chatgpt_messages = []
+        self.chatgpt_response = None
+        self.log_file_name = None

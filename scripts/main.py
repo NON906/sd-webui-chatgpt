@@ -212,6 +212,10 @@ def on_ui_tabs():
 
         return [last_image_name, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n').replace('&lt;', '<').replace('&gt;', '>'), chat_history]
 
+    def chatgpt_clear():
+        chat_gpt_api.clear()
+        return []
+
     def chatgpt_load(file_name: str, chat_history):
         if os.path.dirname(file_name) == '':
             file_name = os.path.join(basedir(), 'outputs', 'chatgpt', 'chat', file_name)
@@ -258,10 +262,11 @@ def on_ui_tabs():
             with gr.Column():
                 chatbot = gr.Chatbot()
                 text_input = gr.Textbox(lines=2, label='')
+                btn_generate = gr.Button(value='Chat', variant='primary')
                 with gr.Row():
-                    btn_generate = gr.Button(value='Chat', variant='primary')
                     btn_regenerate = gr.Button(value='Regenerate')
                     btn_remove_last = gr.Button(value='Remove last')
+                    btn_clear = gr.Button(value='Clear all')
                 with gr.Row():
                     txt_file_path = gr.Textbox(label='File name or path')
                     btn_load = gr.Button(value='Load')
@@ -333,6 +338,8 @@ def on_ui_tabs():
         btn_remove_last.click(fn=chatgpt_remove_last,
             inputs=[text_input, chatbot],
             outputs=[text_input, chatbot])
+        btn_clear.click(fn=chatgpt_clear,
+            outputs=chatbot)
 
     public_ui['apikey'] = txt_apikey
     public_ui_value['apikey'] = apikey
