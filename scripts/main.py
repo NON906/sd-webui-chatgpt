@@ -182,9 +182,13 @@ def on_ui_tabs():
         if chat_history is None or len(chat_history) <= 0:
             return [text_input_str, chat_history]
 
+        if str(len(chat_history) - 1) in chat_history_images.keys():
+            del chat_history_images[str(len(chat_history) - 1)]
         input_text = chat_history[-1][0]
         chat_history = chat_history[:-1]
         if input_text is None:
+            if str(len(chat_history) - 1) in chat_history_images.keys():
+                del chat_history_images[str(len(chat_history) - 1)]
             input_text = chat_history[-1][0]
             chat_history = chat_history[:-1]
 
@@ -198,9 +202,13 @@ def on_ui_tabs():
 
     def chatgpt_regenerate(chat_history):
         if chat_history is not None and len(chat_history) > 0:
+            if str(len(chat_history) - 1) in chat_history_images.keys():
+                del chat_history_images[str(len(chat_history) - 1)]
             input_text = chat_history[-1][0]
             chat_history = chat_history[:-1]
             if input_text is None:
+                if str(len(chat_history) - 1) in chat_history_images.keys():
+                    del chat_history_images[str(len(chat_history) - 1)]
                 input_text = chat_history[-1][0]
                 chat_history = chat_history[:-1]
 
@@ -213,6 +221,7 @@ def on_ui_tabs():
         return [last_image_name, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n').replace('&lt;', '<').replace('&gt;', '>'), chat_history]
 
     def chatgpt_clear():
+        chat_history_images = {}
         chat_gpt_api.clear()
         return []
 
