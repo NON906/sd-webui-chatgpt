@@ -29,9 +29,6 @@ txt2img_params_json = None
 txt2img_params_base = None
 chat_history_images = {}
 
-public_ui = {}
-public_ui_value = {}
-
 def get_path_settings_file(file_name: str):
     ret = os.path.join(os.path.dirname(__file__), '..', 'settings', file_name)
     if os.path.isfile(ret):
@@ -350,24 +347,13 @@ def on_ui_tabs():
         btn_clear.click(fn=chatgpt_clear,
             outputs=chatbot)
 
-    public_ui['apikey'] = txt_apikey
-    public_ui_value['apikey'] = apikey
-    public_ui['chatgpt_model'] = txt_chatgpt_model
-    public_ui_value['chatgpt_model'] = chatgpt_settings['model']
-    public_ui['json_settings'] = txt_json_settings
-    public_ui_value['json_settings'] = txt2img_params_json
+        def on_load():
+            lines = txt2img_params_json.count('\n') + 1
+            json_settings = gr.update(lines=lines, max_lines=lines + 5, value=txt2img_params_json)
+            return [apikey, chatgpt_settings['model'], json_settings]
+
+        runner_interface.load(on_load, outputs=[txt_apikey, txt_chatgpt_model, txt_json_settings])
 
     return [(runner_interface, 'sd-webui-chatgpt', 'chatgpt_interface')]
 
-def on_started(_0, _1):
-    global public_ui, public_ui_value
-
-    for name in public_ui.keys():
-        public_ui[name].value = public_ui_value[name]
-
-    lines = public_ui_value['json_settings'].count('\n') + 1
-    public_ui['json_settings'].lines = lines
-    public_ui['json_settings'].max_lines = lines + 5
-
 script_callbacks.on_ui_tabs(on_ui_tabs)
-script_callbacks.on_app_started(on_started)
