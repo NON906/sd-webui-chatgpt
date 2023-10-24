@@ -32,18 +32,29 @@ chat_history_images = {}
 def get_path_settings_file(file_name: str):
     ret = os.path.join(os.path.dirname(__file__), '..', 'settings', file_name)
     if os.path.isfile(ret):
-        return ret
+        with open(ret, 'r') as f:
+            if len(f.read()) > 0:
+                return ret
     ret = os.path.join(basedir(), 'settings', file_name)
     if os.path.isfile(ret):
-        return ret
+        with open(ret, 'r') as f:
+            if len(f.read()) > 0:
+                return ret
     ret = os.path.join(extensions_dir, 'sd-webui-chatgpt', 'settings', file_name)
     if os.path.isfile(ret):
-        return ret
+        with open(ret, 'r') as f:
+            if len(f.read()) > 0:
+                return ret
+    ret = os.path.join(os.getcwd(), 'extensions', 'sd-webui-chatgpt', 'settings', file_name)
+    if os.path.isfile(ret):
+        with open(ret, 'r') as f:
+            if len(f.read()) > 0:
+                return ret
     return None
 
 def init_txt2img_params():
     global txt2img_params_json, txt2img_params_base
-    with open(get_path_settings_file('chatgpt_txt2img.json')) as f:
+    with open(get_path_settings_file('chatgpt_txt2img.json'), 'r') as f:
         txt2img_params_json = f.read()
         txt2img_params_base = json.loads(txt2img_params_json)
 
@@ -57,11 +68,11 @@ def on_ui_tabs():
     apikey = None
     apikey_file_path = get_path_settings_file('chatgpt_api.txt')
     if apikey_file_path is not None:
-        with open(apikey_file_path) as f:
+        with open(apikey_file_path, 'r') as f:
             apikey = f.read()
 
     chatgpt_settings = None
-    with open(get_path_settings_file('chatgpt_settings.json')) as f:
+    with open(get_path_settings_file('chatgpt_settings.json'), 'r') as f:
         chatgpt_settings = json.load(f)
 
     if apikey is None or apikey == '':
