@@ -125,7 +125,7 @@ def on_ui_tabs():
     else:
         chat_gpt_api = chatgptapi.ChatGptApi(chatgpt_settings['model'], apikey)
     '''
-    chat_gpt_api = langchainapi.LangChainApi('GPT4All', r"D:\Python\sd.webui_Free\gpt4all-13b-snoozy-q4_0.gguf")
+    chat_gpt_api = langchainapi.LangChainApi('GPT4All', r"D:\Python\sd.webui_Free\gpt4all-falcon-q4_0.gguf")
 
     def chatgpt_txt2img(request_prompt: str):
         txt2img_params = copy.deepcopy(txt2img_params_base)
