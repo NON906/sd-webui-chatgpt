@@ -17,7 +17,7 @@ from modules import script_callbacks, sd_samplers
 import modules.scripts
 from modules import generation_parameters_copypaste as params_copypaste
 from modules.paths_internal import extensions_dir
-from scripts import chatgptapi
+from scripts import chatgptapi, langchainapi
 
 info_js = ''
 info_html = ''
@@ -119,10 +119,13 @@ def on_ui_tabs():
     else:
         chatgpt_settings = { "model": "gpt-3.5-turbo" }
 
+    '''
     if apikey is None or apikey == '':
         chat_gpt_api = chatgptapi.ChatGptApi(chatgpt_settings['model'])
     else:
         chat_gpt_api = chatgptapi.ChatGptApi(chatgpt_settings['model'], apikey)
+    '''
+    chat_gpt_api = langchainapi.LangChainApi('GPT4All', r"D:\Python\sd.webui_Free\gpt4all-13b-snoozy-q4_0.gguf")
 
     def chatgpt_txt2img(request_prompt: str):
         txt2img_params = copy.deepcopy(txt2img_params_base)
@@ -224,7 +227,7 @@ def on_ui_tabs():
         return chat_history
 
     def chatgpt_generate(text_input_str: str, chat_history):
-        result, prompt = chat_gpt_api.send_to_chatgpt(text_input_str)
+        result, prompt = chat_gpt_api.send(text_input_str)
 
         chat_history = append_chat_history(chat_history, text_input_str, result, prompt)
 
@@ -266,7 +269,7 @@ def on_ui_tabs():
 
             chat_gpt_api.remove_last_conversation()
 
-            result, prompt = chat_gpt_api.send_to_chatgpt(input_text)
+            result, prompt = chat_gpt_api.send(input_text)
 
             chat_history = append_chat_history(chat_history, input_text, result, prompt)
 

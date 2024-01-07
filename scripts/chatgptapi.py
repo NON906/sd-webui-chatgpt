@@ -74,7 +74,7 @@ class ChatGptApi:
         if os.path.isfile(file_name + '.prev'):
             os.remove(file_name + '.prev')
 
-    def send_to_chatgpt(self, content, write_log=False):
+    def send(self, content, write_log=False):
         if self.chatgpt_response is not None:
             return None
         self.chatgpt_messages.append({"role": "user", "content": content})
