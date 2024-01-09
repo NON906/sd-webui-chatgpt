@@ -40,18 +40,37 @@ class LangChainApi:
     log_file_name = None
     is_sending = False
 
-    def __init__(self, backend=None, model=None):
+    def __init__(self, **kwargs):
         self.backend = None
-        self.model = None
+        self.memory = None
 
-        if backend is not None:
-            self.change_backend(backend)
-        if model is not None:
-            self.change_model(model)
+        self.load_settings(**kwargs)
 
     def init_model(self):
-        if self.backend is None or self.model is None:
+        if self.backend is None:
             return
+
+        if self.backend == 'GPT4All':
+            if (not 'gpt4all_model' in self.settings) or (self.settings['gpt4all_model'] is None):
+                return
+            self.llm = GPT4All(model=self.settings['gpt4all_model'])
+            #self.llm = OpenAI(model_name="gpt-3.5-turbo")
+            is_chat = False
+        if self.backend == 'LlamaCpp':
+            if (not 'llama_cpp_model' in self.settings) or (self.settings['llama_cpp_model'] is None):
+                return
+            if not 'llama_cpp_n_gpu_layers' in self.settings:
+                self.settings['llama_cpp_n_gpu_layers'] = 20
+            if not 'llama_cpp_n_batch' in self.settings:
+                self.settings['llama_cpp_n_batch'] = 128
+            self.llm = LlamaCpp(
+                model_path=self.settings['llama_cpp_model'],
+                n_gpu_layers=self.settings['llama_cpp_n_gpu_layers'],
+                n_batch=self.settings['llama_cpp_n_batch'],
+                n_ctx=2048,
+                #verbose=True,
+            )
+            is_chat = False
 
         self.memory = ConversationBufferMemory(
             human_prefix="Human",
@@ -59,22 +78,6 @@ class LangChainApi:
             memory_key="history",
             return_messages=True,
         )
-
-        if self.backend == 'GPT4All':
-            local_path = self.model
-            self.llm = GPT4All(model=local_path)
-            #self.llm = OpenAI(model_name="gpt-3.5-turbo")
-            is_chat = False
-        if self.backend == 'LlamaCpp':
-            local_path = self.model
-            self.llm = LlamaCpp(
-                model_path=local_path,
-                n_gpu_layers=20,
-                n_batch=128,
-                n_ctx=2048,
-                #verbose=True,
-            )
-            is_chat = False
 
         self.pydantic_parser = PydanticOutputParser(pydantic_object=Txt2ImgModel)
 
@@ -128,13 +131,12 @@ If you understand, please reply to the following:<|end_of_turn|>
             llm=self.llm,
         )
 
-    def change_backend(self, backend):
-        self.backend = backend
-        self.init_model()
+        self.is_inited = True
 
-    def change_model(self, model):
-        self.model = model
-        self.init_model()
+    def load_settings(self, **kwargs):
+        self.settings = kwargs
+        self.backend = self.settings['backend']
+        self.is_inited = False
 
     def set_log(self, log_string):
         chatgpt_messages = json.loads(log_string)
@@ -164,7 +166,10 @@ If you understand, please reply to the following:<|end_of_turn|>
 
     def get_log(self):
         dicts = {'log_version': 2}
-        dicts['messages'] = messages_to_dict(self.memory.chat_memory)
+        if self.memory is None:
+            dicts['messages'] = {}
+        else:
+            dicts['messages'] = messages_to_dict(self.memory.chat_memory)
         return json.dumps(dicts)
 
     def write_log(self, file_name=None):
@@ -181,6 +186,9 @@ If you understand, please reply to the following:<|end_of_turn|>
             os.remove(file_name + '.prev')
 
     def send(self, content, write_log=False):
+        if not self.is_inited:
+            self.init_model()
+
         if self.is_sending:
             return
         self.is_sending = True

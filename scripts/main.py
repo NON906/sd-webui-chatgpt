@@ -28,6 +28,7 @@ last_image_name = None
 txt2img_params_json = None
 txt2img_params_base = None
 chat_history_images = {}
+chat_gpt_api = None
 
 txt2img_json_default = '''{
     "prompt": "",
@@ -98,8 +99,30 @@ def init_txt2img_params():
         txt2img_params_json = txt2img_json_default
     txt2img_params_base = json.loads(txt2img_params_json)
 
+def init_or_change_backend(apikey, chatgpt_settings):
+    global chat_gpt_api
+
+    if chatgpt_settings['backend'] == 'OpenAI API':
+        if type(chat_gpt_api) is chatgptapi.ChatGptApi:
+            chat_gpt_api.change_apikey(apikey)
+            chat_gpt_api.change_model(chatgpt_settings['model'])
+        else:
+            if apikey is None or apikey == '':
+                chat_gpt_api = chatgptapi.ChatGptApi(chatgpt_settings['model'])
+            else:
+                chat_gpt_api = chatgptapi.ChatGptApi(chatgpt_settings['model'], apikey)
+    else:
+        if type(chat_gpt_api) is langchainapi.LangChainApi:
+            chat_gpt_api.load_settings(**chatgpt_settings)
+        elif chat_gpt_api is not None:
+            log = chat_gpt_api.get_log()
+            chat_gpt_api = langchainapi.LangChainApi(**chatgpt_settings)
+            chat_gpt_api.set_log(log)
+        else:
+            chat_gpt_api = langchainapi.LangChainApi(**chatgpt_settings)
+
 def on_ui_tabs():
-    global txt2img_params_base, public_ui, public_ui_value
+    global txt2img_params_base, public_ui, public_ui_value, chat_gpt_api
 
     init_txt2img_params()
     last_prompt = txt2img_params_base['prompt']
@@ -116,16 +139,12 @@ def on_ui_tabs():
     if settings_file_path is not None:
         with open(settings_file_path, 'r') as f:
             chatgpt_settings = json.load(f)
+        if not 'backend' in chatgpt_settings:
+            chatgpt_settings['backend'] = 'OpenAI API'
     else:
-        chatgpt_settings = { "model": "gpt-3.5-turbo" }
+        chatgpt_settings = { "model": "gpt-3.5-turbo", "backend": "OpenAI API" }
 
-    '''
-    if apikey is None or apikey == '':
-        chat_gpt_api = chatgptapi.ChatGptApi(chatgpt_settings['model'])
-    else:
-        chat_gpt_api = chatgptapi.ChatGptApi(chatgpt_settings['model'], apikey)
-    '''
-    chat_gpt_api = langchainapi.LangChainApi('LlamaCpp', r"C:\Users\satoh\Downloads\openchat_3.5.Q6_K.gguf")
+    init_or_change_backend(apikey, chatgpt_settings)
 
     def chatgpt_txt2img(request_prompt: str):
         txt2img_params = copy.deepcopy(txt2img_params_base)
@@ -356,26 +375,74 @@ def on_ui_tabs():
                     ))
         with gr.Row():
             gr.Markdown(value='## Settings')
-        with gr.Row():
-            txt_apikey = gr.Textbox(value='', label='API Key')
-            btn_apikey_save = gr.Button(value='Save And Reflect', variant='primary')
-            def apikey_save(setting_api: str):
-                save_file_name = get_path_settings_file('chatgpt_api.txt')
-                if save_file_name is None:
-                    save_file_name = os.path.join(os.path.dirname(get_path_settings_file('chatgpt_settings.json')), 'chatgpt_api.txt')
-                with open(save_file_name, 'w') as f:
-                    f.write(setting_api)
-                chat_gpt_api.change_apikey(setting_api)
-            btn_apikey_save.click(fn=apikey_save, inputs=txt_apikey)
-        with gr.Row():
-            txt_chatgpt_model = gr.Textbox(value='', label='ChatGPT Model Name')
-            btn_chatgpt_model_save = gr.Button(value='Save And Reflect', variant='primary')
-            def chatgpt_model_save(setting_model: str):
-                chatgpt_settings['model'] = setting_model
-                with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
-                    json.dump(chatgpt_settings, f)
-                chat_gpt_api.change_model(setting_model)
-            btn_chatgpt_model_save.click(fn=chatgpt_model_save, inputs=txt_chatgpt_model)
+        with gr.Tabs() as setting_part_tabs:
+            with gr.TabItem('OpenAI API', id='OpenAI API') as openai_api_tab_item:
+                with gr.Row():
+                    txt_apikey = gr.Textbox(value='', label='API Key')
+                    btn_apikey_save = gr.Button(value='Save And Reflect', variant='primary')
+                    def apikey_save(setting_api: str):
+                        save_file_name = get_path_settings_file('chatgpt_api.txt')
+                        if save_file_name is None:
+                            save_file_name = os.path.join(os.path.dirname(get_path_settings_file('chatgpt_settings.json')), 'chatgpt_api.txt')
+                        with open(save_file_name, 'w') as f:
+                            f.write(setting_api)
+                        chat_gpt_api.change_apikey(setting_api)
+                    btn_apikey_save.click(fn=apikey_save, inputs=txt_apikey)
+                with gr.Row():
+                    txt_chatgpt_model = gr.Textbox(value='', label='ChatGPT Model Name')
+                    btn_chatgpt_model_save = gr.Button(value='Save And Reflect', variant='primary')
+                    def chatgpt_model_save(setting_model: str):
+                        chatgpt_settings['model'] = setting_model
+                        with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
+                            json.dump(chatgpt_settings, f)
+                        chat_gpt_api.change_model(setting_model)
+                    btn_chatgpt_model_save.click(fn=chatgpt_model_save, inputs=txt_chatgpt_model)
+            with gr.TabItem('LlamaCpp', id='LlamaCpp') as llama_cpp_tab_item:
+                with gr.Row():
+                    llama_cpp_model_file = gr.Textbox(label='Model File Path (*.gguf)')
+                with gr.Row():
+                    with gr.Column():
+                        llama_cpp_n_gpu_layers = gr.Number(label='n_gpu_layers')
+                    with gr.Column():
+                        llama_cpp_n_batch = gr.Number(label='n_batch')
+                    with gr.Column():
+                        btn_llama_cpp_save = gr.Button(value='Save And Reflect', variant='primary')
+                def llama_cpp_save(path: str, n_gpu_layers: int, n_batch: int):
+                    chatgpt_settings['llama_cpp_model'] = path
+                    chatgpt_settings['llama_cpp_n_gpu_layers'] = n_gpu_layers
+                    chatgpt_settings['llama_cpp_n_batch'] = n_batch
+                    with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
+                        json.dump(chatgpt_settings, f)
+                    chat_gpt_api.load_settings(**chatgpt_settings)
+                btn_llama_cpp_save.click(fn=llama_cpp_save, inputs=[llama_cpp_model_file, llama_cpp_n_gpu_layers, llama_cpp_n_batch])
+            with gr.TabItem('GPT4All', id='GPT4All') as gpt4all_tab_item:
+                with gr.Row():
+                    gpt4all_model_file = gr.Textbox(label='Model File Path (*.gguf)')
+                    btn_gpt4all_save = gr.Button(value='Save And Reflect', variant='primary')
+                    def gpt4all_model_save(path):
+                        chatgpt_settings['gpt4all_model'] = path
+                        with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
+                            json.dump(chatgpt_settings, f)
+                        chat_gpt_api.load_settings(**chatgpt_settings)
+                    btn_gpt4all_save.click(fn=gpt4all_model_save, inputs=gpt4all_model_file)
+        def setting_openai_api_tab_item_select():
+            chatgpt_settings['backend'] = 'OpenAI API'
+            with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
+                json.dump(chatgpt_settings, f)
+            init_or_change_backend(apikey, chatgpt_settings)
+        openai_api_tab_item.select(fn=setting_openai_api_tab_item_select)
+        def setting_llama_cpp_tab_item_select():
+            chatgpt_settings['backend'] = 'LlamaCpp'
+            with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
+                json.dump(chatgpt_settings, f)
+            init_or_change_backend(apikey, chatgpt_settings)
+        llama_cpp_tab_item.select(fn=setting_llama_cpp_tab_item_select)
+        def setting_gpt4all_tab_item_select():
+            chatgpt_settings['backend'] = 'GPT4All'
+            with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
+                json.dump(chatgpt_settings, f)
+            init_or_change_backend(apikey, chatgpt_settings)
+        gpt4all_tab_item.select(fn=setting_gpt4all_tab_item_select)
         with gr.Row():
             txt_json_settings = gr.Textbox(value='', label='txt2img')
         with gr.Row():
@@ -408,9 +475,27 @@ def on_ui_tabs():
         def on_load():
             lines = txt2img_params_json.count('\n') + 1
             json_settings = gr.update(lines=lines, max_lines=lines + 5, value=txt2img_params_json)
-            return [apikey, chatgpt_settings['model'], json_settings]
+            setting_part_tabs_out = gr.update(selected=chatgpt_settings['backend'])
 
-        runner_interface.load(on_load, outputs=[txt_apikey, txt_chatgpt_model, txt_json_settings])
+            if not 'llama_cpp_n_gpu_layers' in chatgpt_settings:
+                chatgpt_settings['llama_cpp_n_gpu_layers'] = 20
+            if not 'llama_cpp_n_batch' in chatgpt_settings:
+                chatgpt_settings['llama_cpp_n_batch'] = 128
+
+            ret = [apikey, chatgpt_settings['model'], json_settings, setting_part_tabs_out,
+                chatgpt_settings['llama_cpp_n_gpu_layers'], chatgpt_settings['llama_cpp_n_batch']]
+
+            for key in ['llama_cpp_model', 'gpt4all_model']:
+                if key in chatgpt_settings:
+                    ret.append(chatgpt_settings[key])
+                else:
+                    ret.append('')
+            
+            return ret
+
+        runner_interface.load(on_load, outputs=[txt_apikey, txt_chatgpt_model, txt_json_settings, setting_part_tabs,
+            llama_cpp_n_gpu_layers, llama_cpp_n_batch,
+            llama_cpp_model_file, gpt4all_model_file])
 
     return [(runner_interface, 'sd-webui-chatgpt', 'chatgpt_interface')]
 
