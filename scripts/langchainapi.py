@@ -5,7 +5,7 @@ import os
 import sys
 import json
 from langchain import PromptTemplate
-from langchain_community.llms import GPT4All
+from langchain_community.llms import GPT4All, LlamaCpp
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import (
     AIMessage,
@@ -14,9 +14,10 @@ from langchain.schema import (
     messages_to_dict,
 )
 from langchain.chains import LLMChain
-from langchain.output_parsers import PydanticOutputParser, OutputFixingParser
+from langchain.output_parsers import PydanticOutputParser, RetryWithErrorOutputParser
 from pydantic import BaseModel, Field
 from typing import Optional
+from huggingface_hub import snapshot_download
 #from langchain_community.llms import OpenAI
 #os.environ['OPENAI_API_KEY'] = 'foo'
 
@@ -59,6 +60,28 @@ class LangChainApi:
             self.llm = GPT4All(model=local_path)
             #self.llm = OpenAI(model_name="gpt-3.5-turbo")
             is_chat = False
+        if self.model_class == 'LlamaCpp':
+            if os.path.isfile(self.model):
+                local_path = self.model
+            else:
+                local_model_dir = os.path.join(os.path.dirname(__file__), '..', 'models', self.model.replace('/', '_'))
+                os.makedirs(local_model_dir, exist_ok=True)
+                if len(os.listdir(local_model_dir)) == 0:
+                    local_path = snapshot_download(
+                        repo_id=self.model,
+                        local_dir=local_model_dir,
+                        local_dir_use_symlinks=False, 
+                    )
+                else:
+                    local_path = local_model_dir
+            self.llm = LlamaCpp(
+                model_path=local_path,
+                n_gpu_layers=20,
+                n_batch=128,
+                n_ctx=2048,
+                verbose=True,
+            )
+            is_chat = False
 
         self.pydantic_parser = PydanticOutputParser(pydantic_object=Txt2ImgModel)
 
@@ -81,11 +104,12 @@ AI: """
             def chat_predict(human_input):
                 return self.llm_chain.invoke({
                     'human_input': human_input,
+                    #'chat_history': self.memory.load_memory_variables({})['chat_history'],
                 })['text']
 
             self.chat_predict = chat_predict
 
-        self.parser = OutputFixingParser.from_llm(
+        self.parser = RetryWithErrorOutputParser.from_llm(
             parser=self.pydantic_parser,
             llm=self.llm,
         )
@@ -148,7 +172,10 @@ AI: """
         self.is_sending = True
 
         result = self.chat_predict(human_input=content)
-        parse_result = self.parser.parse(result)
+        parse_result = self.parser.parse_with_prompt(result, self.prompt.format_prompt(
+            chat_history=self.memory.load_memory_variables({})['chat_history'],
+            human_input=content,
+        ))
 
         if parse_result.message.startswith('AI: '):
             parse_result.message = parse_result.message[4:]

@@ -14,3 +14,13 @@ if not launch.is_installed('langchainhub'):
 
 if not launch.is_installed('gpt4all'):
     launch.run_pip('install gpt4all', 'gpt4all')
+
+if not launch.is_installed('llama-cpp-python'):
+    import os
+    if os.name == 'nt':
+        launch.run_pip('install https://github.com/oobabooga/llama-cpp-python-cuBLAS-wheels/releases/download/wheels/llama_cpp_python-0.2.23+cu118-cp310-cp310-win_amd64.whl', 'llama-cpp-python')
+    else:
+        launch.run_pip('install https://github.com/oobabooga/llama-cpp-python-cuBLAS-wheels/releases/download/wheels/llama_cpp_python-0.2.23+cu118-cp310-cp310-manylinux_2_31_x86_64.whl', 'llama-cpp-python')
+
+if not launch.is_installed('huggingface_hub'):
+    launch.run_pip('install huggingface_hub', 'huggingface_hub')
