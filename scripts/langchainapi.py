@@ -40,17 +40,17 @@ class LangChainApi:
     log_file_name = None
     is_sending = False
 
-    def __init__(self, model_class=None, model=None):
-        self.model_class = None
+    def __init__(self, backend=None, model=None):
+        self.backend = None
         self.model = None
 
-        if model_class is not None:
-            self.change_model_class(model_class)
+        if backend is not None:
+            self.change_backend(backend)
         if model is not None:
             self.change_model(model)
 
     def init_model(self):
-        if self.model_class is None or self.model is None:
+        if self.backend is None or self.model is None:
             return
 
         self.memory = ConversationBufferMemory(
@@ -60,19 +60,19 @@ class LangChainApi:
             return_messages=True,
         )
 
-        if self.model_class == 'GPT4All':
+        if self.backend == 'GPT4All':
             local_path = self.model
             self.llm = GPT4All(model=local_path)
             #self.llm = OpenAI(model_name="gpt-3.5-turbo")
             is_chat = False
-        if self.model_class == 'LlamaCpp':
+        if self.backend == 'LlamaCpp':
             local_path = self.model
             self.llm = LlamaCpp(
                 model_path=local_path,
                 n_gpu_layers=20,
                 n_batch=128,
                 n_ctx=2048,
-                verbose=True,
+                #verbose=True,
             )
             is_chat = False
 
@@ -112,13 +112,13 @@ If you understand, please reply to the following:<|end_of_turn|>
                 human_message_prompt,
             ])
 
-            self.llm_chain = LLMChain(prompt=self.prompt, llm=self.llm, memory=self.memory, verbose=True)
+            self.llm_chain = LLMChain(prompt=self.prompt, llm=self.llm, memory=self.memory)#, verbose=True)
 
             def chat_predict(human_input):
                 ret = self.llm_chain.invoke({
                     'human_input': human_input,
                 })['text']
-                print(ret)
+                #print(ret)
                 return ret
 
             self.chat_predict = chat_predict
@@ -128,8 +128,8 @@ If you understand, please reply to the following:<|end_of_turn|>
             llm=self.llm,
         )
 
-    def change_model_class(self, model_class):
-        self.model_class = model_class
+    def change_backend(self, backend):
+        self.backend = backend
         self.init_model()
 
     def change_model(self, model):
