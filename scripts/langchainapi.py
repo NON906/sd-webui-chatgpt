@@ -26,15 +26,15 @@ from langchain.prompts.chat import (
 #os.environ['OPENAI_API_KEY'] = 'foo'
 
 class Txt2ImgModel(BaseModel):
-    message: str = Field(description='''Chat message.
-Please enter the content of your reply to me.
-If prompt is exists, Displayed before the image.''')
     prompt: Optional[str] = Field(description='''Prompt for generate image.
 Generate image from prompt by Stable Diffusion. (Sentences cannot be generated.)
 There is no memory function, so please carry over the prompts from past conversations.
 Prompt is comma separated keywords such as "1girl, school uniform, red ribbon" (not list).
-If it is not in English, please translate it into English (lang:en).'''
-    )
+If it is not in English, please translate it into English (lang:en).''')
+    message: str = Field(description='''Chat message.
+Please enter the content of your reply to me.
+If prompt is exists, Displayed before the image.''')
+
 
 class LangChainApi:
     log_file_name = None
@@ -88,8 +88,8 @@ You also have the function to generate image with Stable Diffusion.
 Below is an example of the final output:
 ```
 {{
-    "message": "This is a school girl wearing a red ribbon.",
-    "prompt": "1girl, school uniform, red ribbon"
+    "prompt": "1girl, school uniform, red ribbon",
+    "message": "This is a school girl wearing a red ribbon."
 }}
 ```
 <|end_of_turn|>
