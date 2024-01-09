@@ -32,7 +32,7 @@ If prompt is exists, Displayed before the image.''')
     prompt: Optional[str] = Field(description='''Prompt for generate image.
 Generate image from prompt by Stable Diffusion. (Sentences cannot be generated.)
 There is no memory function, so please carry over the prompts from past conversations.
-Prompt is comma separated keywords such as "1girl, school uniform, red ribbon".
+Prompt is comma separated keywords such as "1girl, school uniform, red ribbon" (not list).
 If it is not in English, please translate it into English (lang:en).'''
     )
 
@@ -79,13 +79,29 @@ class LangChainApi:
         self.pydantic_parser = PydanticOutputParser(pydantic_object=Txt2ImgModel)
 
         if not is_chat:
-            template = "You are a chatbot having a conversation with a human.\n\n{format_instructions}\n"
+            template = """
+You are a chatbot having a conversation with a human.
+You also have the function to generate image with Stable Diffusion.
+
+{format_instructions}
+
+Below is an example of the final output:
+```
+{{
+    "message": "This is a school girl wearing a red ribbon.",
+    "prompt": "1girl, school uniform, red ribbon"
+}}
+```
+<|end_of_turn|>
+If you understand, please reply to the following:<|end_of_turn|>
+"""
+            format_instructions = self.pydantic_parser.get_format_instructions()
             system_message_prompt = SystemMessagePromptTemplate.from_template(
                 template,
-                partial_variables={"format_instructions": self.pydantic_parser.get_format_instructions()},
+                partial_variables={"format_instructions": format_instructions},
             )
 
-            human_template = "{human_input}"
+            human_template = "{human_input}<|end_of_turn|>AI:"
             human_message_prompt = HumanMessagePromptTemplate.from_template(
                 human_template,
             )
@@ -170,14 +186,20 @@ class LangChainApi:
         self.is_sending = True
 
         result = self.chat_predict(human_input=content)
-        parse_result = self.parser.parse(result)
+        try:
+            parse_result = self.parser.parse(result)
+            return_message = parse_result.message
+            return_prompt = parse_result.prompt
+        except:
+            return_message = result
+            return_prompt = None
 
         if write_log:
             self.write_log()
 
         self.is_sending = False
 
-        return parse_result.message, parse_result.prompt
+        return return_message, return_prompt
 
     def remove_last_conversation(self, result=None, write_log=False):
         if result is None or self.memory.chat_memory.messages[-1].content == result:
