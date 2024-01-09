@@ -21,6 +21,3 @@ if not launch.is_installed('llama-cpp-python'):
         launch.run_pip('install https://github.com/oobabooga/llama-cpp-python-cuBLAS-wheels/releases/download/wheels/llama_cpp_python-0.2.23+cu118-cp310-cp310-win_amd64.whl', 'llama-cpp-python')
     else:
         launch.run_pip('install https://github.com/oobabooga/llama-cpp-python-cuBLAS-wheels/releases/download/wheels/llama_cpp_python-0.2.23+cu118-cp310-cp310-manylinux_2_31_x86_64.whl', 'llama-cpp-python')
-
-if not launch.is_installed('huggingface_hub'):
-    launch.run_pip('install huggingface_hub', 'huggingface_hub')

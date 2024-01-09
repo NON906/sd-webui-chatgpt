@@ -125,7 +125,7 @@ def on_ui_tabs():
     else:
         chat_gpt_api = chatgptapi.ChatGptApi(chatgpt_settings['model'], apikey)
     '''
-    chat_gpt_api = langchainapi.LangChainApi('LlamaCpp', r"C:\Users\satoh\Downloads\ELYZA-japanese-Llama-2-13b-fast-instruct-q4_K_M.gguf")
+    chat_gpt_api = langchainapi.LangChainApi('LlamaCpp', r"C:\Users\satoh\Downloads\openchat_3.5.Q6_K.gguf")
 
     def chatgpt_txt2img(request_prompt: str):
         txt2img_params = copy.deepcopy(txt2img_params_base)
