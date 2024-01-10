@@ -146,7 +146,18 @@ If you understand, please reply to the following:<|end_of_turn|>
                 if mes['role'] == 'user':
                     history.add_user_message(mes['content'])
                 elif mes['role'] == 'assistant':
-                    history.add_ai_message(mes['content'])
+                    if '\n(Generated image by the following prompt: ' in mes['content']:
+                        mes_content, mes_prompt = mes['content'].split('\n(Generated image by the following prompt: ')
+                        mes_prompt = mes_prompt[::-1].replace(')', '', 1)[::-1]
+                        mes_json = json.dumps({
+                            "prompt": mes_prompt,
+                            "message": mes_content,
+                        })
+                    else:
+                        mes_json = json.dumps({
+                            "message": mes['content'],
+                        })
+                    history.add_ai_message(mes_json)
             self.memory.chat_memory = history
         elif chatgpt_messages['log_version'] == 2:
             self.memory.chat_memory = messages_from_dict(chatgpt_messages['messages'])
@@ -165,12 +176,23 @@ If you understand, please reply to the following:<|end_of_turn|>
         return False
 
     def get_log(self):
-        dicts = {'log_version': 2}
-        if self.memory is None:
-            dicts['messages'] = {}
-        else:
-            dicts['messages'] = messages_to_dict(self.memory.chat_memory)
-        return json.dumps(dicts)
+        ret_messages = []
+        for mes in self.memory.chat_memory:
+            if type(mes) is HumanMessage:
+                ret_messages.append({"role": "user", "content": mes.content})
+            elif type(mes) is AIMessage:
+                mes_dict = json.loads(mes.content)
+                add_mes = mes_dict['message']
+                if 'prompt' in mes_dict and mes_dict['prompt'] is not None and mes_dict['prompt'] != "":
+                    add_mes += "\n(Generated image by the following prompt: " + mes_dict['prompt'] + ")"
+                ret_messages.append({"role": "assistant", "content": add_mes})
+        return json.dumps(ret_messages)
+        #dicts = {'log_version': 2}
+        #if self.memory is None:
+        #    dicts['messages'] = {}
+        #else:
+        #    dicts['messages'] = messages_to_dict(self.memory.chat_memory)
+        #return json.dumps(dicts)
 
     def write_log(self, file_name=None):
         if file_name is None:
@@ -211,7 +233,10 @@ If you understand, please reply to the following:<|end_of_turn|>
 
     def remove_last_conversation(self, result=None, write_log=False):
         if result is None or self.memory.chat_memory.messages[-1].content == result:
-            self.memory.chat_memory.messages = self.memory.chat_memory.messages[:-2]
+            if len(self.memory.chat_memory.messages) > 2:
+                self.memory.chat_memory.messages = self.memory.chat_memory.messages[:-2]
+            else:
+                self.memory.chat_memory.messages.clear()
             if write_log:
                 self.write_log()
 

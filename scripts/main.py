@@ -102,6 +102,10 @@ def init_txt2img_params():
 def init_or_change_backend(apikey, chatgpt_settings):
     global chat_gpt_api
 
+    log = None
+    if chat_gpt_api is not None:
+        log = chat_gpt_api.get_log()
+
     if chatgpt_settings['backend'] == 'OpenAI API':
         if type(chat_gpt_api) is chatgptapi.ChatGptApi:
             chat_gpt_api.change_apikey(apikey)
@@ -114,12 +118,11 @@ def init_or_change_backend(apikey, chatgpt_settings):
     else:
         if type(chat_gpt_api) is langchainapi.LangChainApi:
             chat_gpt_api.load_settings(**chatgpt_settings)
-        elif chat_gpt_api is not None:
-            log = chat_gpt_api.get_log()
-            chat_gpt_api = langchainapi.LangChainApi(**chatgpt_settings)
-            chat_gpt_api.set_log(log)
         else:
             chat_gpt_api = langchainapi.LangChainApi(**chatgpt_settings)
+
+    if log is not None:
+        chat_gpt_api.set_log(log)
 
 def on_ui_tabs():
     global txt2img_params_base, public_ui, public_ui_value, chat_gpt_api
