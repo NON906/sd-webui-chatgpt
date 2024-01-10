@@ -244,3 +244,6 @@ If you understand, please reply to the following:<|end_of_turn|>
     def clear(self):
         self.memory.chat_memory.clear()
         self.log_file_name = None
+
+    def get_stream(self):
+        return None, None

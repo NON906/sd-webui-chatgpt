@@ -5,6 +5,7 @@ import os
 import openai
 import sys
 import json
+from gpt_stream_parser import force_parse_json
 
 class ChatGptApi:
     chatgpt_messages = []
@@ -29,6 +30,8 @@ class ChatGptApi:
         },
     }]
     model = 'gpt-3.5-turbo'
+    recieved_json = ''
+    recieved_message = ''
 
     def __init__(self, model=None, apikey=None):
         if model is not None:
@@ -81,20 +84,26 @@ class ChatGptApi:
         self.chatgpt_response = openai.ChatCompletion.create(
             model=self.model,
             messages=self.chatgpt_messages,
-            functions=self.chatgpt_functions
+            functions=self.chatgpt_functions,
+            stream=True,
         )
         ignore_result = False
-        result = str(self.chatgpt_response["choices"][0]["message"]["content"])
+        self.recieved_json = ''
+        self.recieved_message = ''
+        for chunk in self.chatgpt_response:
+            if 'function_call' in chunk.choices[0].delta and chunk.choices[0].delta.function_call is not None and 'arguments' in chunk.choices[0].delta.function_call:
+                self.recieved_json += chunk.choices[0].delta.function_call.arguments
+            else:
+                self.recieved_message += chunk.choices[0].delta.get('content', '')
+        result = self.recieved_message
         prompt = None
-        if "function_call" in self.chatgpt_response["choices"][0]["message"].keys():
-            function_call = self.chatgpt_response["choices"][0]["message"]["function_call"]
-            if function_call is not None and function_call["name"] == "txt2img":
-                func_args = json.loads(function_call["arguments"])
-                prompt = func_args["prompt"]
-                if "message" in func_args:
-                    result = func_args["message"]
-                else:
-                    ignore_result = True
+        if self.recieved_json != '':
+            func_args = json.loads(self.recieved_json)
+            prompt = func_args["prompt"]
+            if "message" in func_args:
+                result = func_args["message"]
+            else:
+                ignore_result = True
         self.chatgpt_response = None
         if prompt is None:
             self.chatgpt_messages.append({"role": "assistant", "content": result})
@@ -119,3 +128,12 @@ class ChatGptApi:
         self.chatgpt_messages = []
         self.chatgpt_response = None
         self.log_file_name = None
+
+    def get_stream(self):
+        if self.recieved_json == '':
+            return self.recieved_message, None
+        func_args = force_parse_json(self.recieved_json)
+        if func_args is not None and "message" in func_args:
+            return func_args["message"], func_args["prompt"]
+        else:
+            return None, None
