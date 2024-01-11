@@ -509,7 +509,17 @@ def on_ui_tabs():
                     txt2img_params_base = json.loads(txt2img_params_json)
                 btn_settings_reflect.click(fn=json_reflect, inputs=txt_json_settings)
         
+        set_interactive_items = [text_input, btn_generate, btn_regenerate,
+            btn_remove_last, btn_clear, btn_load, btn_save,
+            txt_apikey, btn_apikey_save, txt_chatgpt_model, btn_chatgpt_model_save,
+            llama_cpp_model_file, llama_cpp_n_gpu_layers, llama_cpp_n_batch, btn_llama_cpp_save,
+            gpt4all_model_file, btn_gpt4all_save,
+            txt_json_settings, btn_settings_save, btn_settings_reflect]
+
         btn_generate.click(
+                fn=lambda: [gr.update(interactive=False) for _ in set_interactive_items],
+                outputs=set_interactive_items,
+            ).then(
                 fn=lambda t, c: ['', c + [(t, None)]], 
                 inputs=[text_input, chatbot],
                 outputs=[text_input, chatbot],
@@ -520,10 +530,16 @@ def on_ui_tabs():
                 outputs=chatbot,
                 #queue=False,
             ).then(
+                fn=lambda: [gr.update(interactive=True) for _ in set_interactive_items],
+                outputs=set_interactive_items,
+            ).then(
                 fn=chatgpt_generate_finished,
                 outputs=[image_gr, info_html_gr, comments_html_gr, info_text_gr, text_input],
             )
         btn_regenerate.click(
+                fn=lambda: [gr.update(interactive=False) for _ in set_interactive_items],
+                outputs=set_interactive_items,
+            ).then(
                 fn=chatgpt_regenerate,
                 inputs=chatbot,
                 outputs=chatbot,
@@ -538,6 +554,9 @@ def on_ui_tabs():
                 inputs=chatbot,
                 outputs=chatbot,
                 #queue=False,
+            ).then(
+                fn=lambda: [gr.update(interactive=True) for _ in set_interactive_items],
+                outputs=set_interactive_items,
             ).then(
                 fn=chatgpt_generate_finished,
                 outputs=[image_gr, info_html_gr, comments_html_gr, info_text_gr, text_input],
