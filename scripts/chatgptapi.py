@@ -134,6 +134,9 @@ class ChatGptApi:
             return self.recieved_message, None
         func_args = force_parse_json(self.recieved_json)
         if func_args is not None and "message" in func_args:
-            return func_args["message"], func_args["prompt"]
+            if "prompt" in func_args:
+                return func_args["message"], func_args["prompt"]
+            else:
+                return func_args["message"], None
         else:
             return None, None
