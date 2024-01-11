@@ -61,14 +61,13 @@ class LangChainApi:
             memory_key="history",
             return_messages=True,
         )
+        self.callback = StreamingLLMCallbackHandler()
 
         self.load_settings(**kwargs)
 
     def init_model(self):
         if self.backend is None:
             return
-
-        self.callback = StreamingLLMCallbackHandler()
 
         if self.backend == 'GPT4All':
             if (not 'gpt4all_model' in self.settings) or (self.settings['gpt4all_model'] is None):
@@ -279,5 +278,7 @@ If you understand, please reply to the following:<|end_of_turn|>
                     return recieved_dict["message"], recieved_dict["prompt"]
                 else:
                     return recieved_dict["message"], None
+            else:
+                return None, None
         else:
             return None, None

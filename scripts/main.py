@@ -337,11 +337,7 @@ def on_ui_tabs():
 
             chat_gpt_api.remove_last_conversation()
 
-            result, prompt = chat_gpt_api.send(input_text)
-
-            chat_history = append_chat_history(chat_history, input_text, result, prompt)
-
-        return [last_image_name, info_html, comments_html, info_html.replace('<br>', '\n').replace('<p>', '').replace('</p>', '\n').replace('&lt;', '<').replace('&gt;', '>'), chat_history]
+        return chat_history
 
     def chatgpt_clear():
         chat_history_images = {}
@@ -522,11 +518,26 @@ def on_ui_tabs():
             ).then(
                 fn=chatgpt_generate_finished,
                 outputs=[image_gr, info_html_gr, comments_html_gr, info_text_gr, text_input],
-                #queue=False,
             )
-        btn_regenerate.click(fn=chatgpt_regenerate,
-            inputs=chatbot,
-            outputs=[image_gr, info_html_gr, comments_html_gr, info_text_gr, chatbot])
+        btn_regenerate.click(
+                fn=chatgpt_regenerate,
+                inputs=chatbot,
+                outputs=chatbot,
+                #queue=False,
+            ).then(
+                fn=lambda t, c: ['', c + [(t, None)]], 
+                inputs=[text_input, chatbot],
+                outputs=[text_input, chatbot],
+                #queue=False,
+            ).then(
+                fn=chatgpt_generate,
+                inputs=chatbot,
+                outputs=chatbot,
+                #queue=False,
+            ).then(
+                fn=chatgpt_generate_finished,
+                outputs=[image_gr, info_html_gr, comments_html_gr, info_text_gr, text_input],
+            )
         btn_remove_last.click(fn=chatgpt_remove_last,
             inputs=[text_input, chatbot],
             outputs=[text_input, chatbot])
