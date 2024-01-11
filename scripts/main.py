@@ -10,6 +10,7 @@ import copy
 import inspect
 import sys
 import time
+import glob
 import gradio as gr
 from PIL import PngImagePlugin
 from modules.scripts import basedir
@@ -149,6 +150,9 @@ def on_ui_tabs():
         chatgpt_settings = { "model": "gpt-3.5-turbo", "backend": "OpenAI API" }
 
     init_or_change_backend(apikey, chatgpt_settings)
+
+    save_dir = os.path.join(basedir(), 'outputs', 'chatgpt', 'chat')
+    save_files = [os.path.basename(full_path) for full_path in glob.glob(save_dir + '/*')]
 
     def chatgpt_txt2img(request_prompt: str):
         txt2img_params = copy.deepcopy(txt2img_params_base)
@@ -396,7 +400,7 @@ def on_ui_tabs():
                     btn_remove_last = gr.Button(value='Remove last')
                     btn_clear = gr.Button(value='Clear all')
                 with gr.Row():
-                    txt_file_path = gr.Textbox(label='File name or path')
+                    txt_file_path = gr.Dropdown(value='', allow_custom_value=True, label='File name or path')
                     btn_load = gr.Button(value='Load')
                     btn_load.click(fn=chatgpt_load, inputs=[txt_file_path, chatbot], outputs=chatbot)
                     btn_save = gr.Button(value='Save')
@@ -548,13 +552,14 @@ def on_ui_tabs():
             lines = txt2img_params_json.count('\n') + 1
             json_settings = gr.update(lines=lines, max_lines=lines + 5, value=txt2img_params_json)
             setting_part_tabs_out = gr.update(selected=chatgpt_settings['backend'])
+            save_file_path = gr.update(choices=save_files)
 
             if not 'llama_cpp_n_gpu_layers' in chatgpt_settings:
                 chatgpt_settings['llama_cpp_n_gpu_layers'] = 20
             if not 'llama_cpp_n_batch' in chatgpt_settings:
                 chatgpt_settings['llama_cpp_n_batch'] = 128
 
-            ret = [apikey, chatgpt_settings['model'], json_settings, setting_part_tabs_out,
+            ret = [apikey, chatgpt_settings['model'], json_settings, setting_part_tabs_out, save_file_path,
                 chatgpt_settings['llama_cpp_n_gpu_layers'], chatgpt_settings['llama_cpp_n_batch']]
 
             for key in ['llama_cpp_model', 'gpt4all_model']:
@@ -565,7 +570,7 @@ def on_ui_tabs():
             
             return ret
 
-        runner_interface.load(on_load, outputs=[txt_apikey, txt_chatgpt_model, txt_json_settings, setting_part_tabs,
+        runner_interface.load(on_load, outputs=[txt_apikey, txt_chatgpt_model, txt_json_settings, setting_part_tabs, txt_file_path,
             llama_cpp_n_gpu_layers, llama_cpp_n_batch,
             llama_cpp_model_file, gpt4all_model_file])
 
