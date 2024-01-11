@@ -387,6 +387,10 @@ def on_ui_tabs():
 
         print(file_name + ' is saved.')
 
+        save_files = [os.path.basename(full_path) for full_path in glob.glob(save_dir + '/*')]
+        save_file_path = gr.update(choices=save_files)
+        return save_file_path
+
     with gr.Blocks(analytics_enabled=False) as runner_interface:
         with gr.Row():
             gr.Markdown(value='## Chat')
@@ -404,7 +408,7 @@ def on_ui_tabs():
                     btn_load = gr.Button(value='Load')
                     btn_load.click(fn=chatgpt_load, inputs=[txt_file_path, chatbot], outputs=chatbot)
                     btn_save = gr.Button(value='Save')
-                    btn_save.click(fn=chatgpt_save, inputs=[txt_file_path, chatbot])
+                    btn_save.click(fn=chatgpt_save, inputs=[txt_file_path, chatbot], outputs=txt_file_path)
         with gr.Row():
             gr.Markdown(value='## Last Image')
         with gr.Row():
