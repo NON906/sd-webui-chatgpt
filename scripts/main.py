@@ -243,8 +243,8 @@ def on_ui_tabs():
         if prompt is not None and prompt != '':
             if txt2img_thread is None:
                 chatgpt_txt2img(prompt)
-            else:
-                txt2img_thread.join()
+            #else:
+            #    txt2img_thread.join()
             if result is None:
                 chat_history_images[len(chat_history)] = last_image_name
                 chat_history.append((text_input_str, (last_image_name, )))
@@ -266,7 +266,8 @@ def on_ui_tabs():
                 txt2img_thread.start()
             if message is not None:
                 chat_history[-1][1] = message
-            time.sleep(0.01)
+            if not stop_recv_thread:
+                time.sleep(0.01)
 
     def chatgpt_generate(chat_history):
         global stop_recv_thread, chatgpt_generate_result, chatgpt_generate_prompt
@@ -284,16 +285,16 @@ def on_ui_tabs():
         def send_thread_func():
             global stop_recv_thread, chatgpt_generate_result, chatgpt_generate_prompt
             chatgpt_generate_result, chatgpt_generate_prompt = chat_gpt_api.send(text_input_str)
+            if txt2img_thread is not None:
+                txt2img_thread.join()
             stop_recv_thread = True
         thread2 = threading.Thread(target=send_thread_func)
         thread2.start()
 
-        prev_message = chat_history[-1][1]
         while not stop_recv_thread:
-            if prev_message != chat_history[-1][1]:
-                prev_message = chat_history[-1][1]
-                yield chat_history
-            time.sleep(0.01)
+            yield chat_history
+            if not stop_recv_thread:
+                time.sleep(0.01)
 
         thread.join()
 
