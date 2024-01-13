@@ -313,7 +313,7 @@ def on_ui_tabs():
             del chat_history_images[str(len(chat_history) - 1)]
         input_text = chat_history[-1][0]
         chat_history = chat_history[:-1]
-        if input_text is None:
+        if input_text is None or input_text == '':
             if str(len(chat_history) - 1) in chat_history_images.keys():
                 del chat_history_images[str(len(chat_history) - 1)]
             input_text = chat_history[-1][0]
@@ -326,22 +326,6 @@ def on_ui_tabs():
             ret_text = input_text
         
         return [ret_text, chat_history]
-
-    def chatgpt_regenerate(chat_history):
-        if chat_history is not None and len(chat_history) > 0:
-            if str(len(chat_history) - 1) in chat_history_images.keys():
-                del chat_history_images[str(len(chat_history) - 1)]
-            input_text = chat_history[-1][0]
-            chat_history = chat_history[:-1]
-            if input_text is None:
-                if str(len(chat_history) - 1) in chat_history_images.keys():
-                    del chat_history_images[str(len(chat_history) - 1)]
-                input_text = chat_history[-1][0]
-                chat_history = chat_history[:-1]
-
-            chat_gpt_api.remove_last_conversation()
-
-        return chat_history
 
     def chatgpt_clear():
         chat_history_images = {}
@@ -527,12 +511,11 @@ def on_ui_tabs():
                 fn=lambda t, c: ['', c + [(t, None)]], 
                 inputs=[text_input, chatbot],
                 outputs=[text_input, chatbot],
-                #queue=False,
+                queue=False,
             ).then(
                 fn=chatgpt_generate,
                 inputs=chatbot,
                 outputs=chatbot,
-                #queue=False,
             ).then(
                 fn=lambda: [gr.update(interactive=True) for _ in set_interactive_items],
                 outputs=set_interactive_items,
@@ -544,20 +527,23 @@ def on_ui_tabs():
                 fn=lambda: [gr.update(interactive=False) for _ in set_interactive_items],
                 outputs=set_interactive_items,
             ).then(
-                fn=chatgpt_regenerate,
-                inputs=chatbot,
-                outputs=chatbot,
-                #queue=False,
+                fn=lambda: '',
+                outputs=text_input,
+                queue=False,
+            ).then(
+                fn=chatgpt_remove_last,
+                inputs=[text_input, chatbot],
+                outputs=[text_input, chatbot],
+                queue=False,
             ).then(
                 fn=lambda t, c: ['', c + [(t, None)]], 
                 inputs=[text_input, chatbot],
                 outputs=[text_input, chatbot],
-                #queue=False,
+                queue=False,
             ).then(
                 fn=chatgpt_generate,
                 inputs=chatbot,
                 outputs=chatbot,
-                #queue=False,
             ).then(
                 fn=lambda: [gr.update(interactive=True) for _ in set_interactive_items],
                 outputs=set_interactive_items,
