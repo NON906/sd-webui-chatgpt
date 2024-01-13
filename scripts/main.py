@@ -245,7 +245,7 @@ def on_ui_tabs():
                 chatgpt_txt2img(prompt)
             else:
                 txt2img_thread.join()
-            if result is None:
+            if result is None or result == '':
                 chat_history_images[len(chat_history)] = last_image_name
                 chat_history.append((text_input_str, (last_image_name, )))
             else:
