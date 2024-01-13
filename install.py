@@ -24,3 +24,5 @@ if not launch.is_installed('llama-cpp-python'):
 
 if not launch.is_installed('gpt-stream-json-parser'):
     launch.run_pip('install git+https://github.com/furnqse/gpt-stream-json-parser.git', 'gpt-stream-json-parser')
+
+launch.run_pip('install -U h11 uvicorn fastapi', 'h11')
