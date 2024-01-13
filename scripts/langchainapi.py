@@ -13,7 +13,7 @@ from langchain.schema import (
     messages_from_dict,
     messages_to_dict,
 )
-from langchain.chains import LLMChain
+from langchain.chains import LLMChain, ConversationChain
 from langchain.output_parsers import PydanticOutputParser, OutputFixingParser
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -110,7 +110,7 @@ Below is an example of the final output:
 ```
 {{
     "prompt": "1girl, school uniform, red ribbon",
-    "message": "This is a school girl wearing a red ribbon."
+    "message": "This is a school girl wearing a red ribbon.\nWhat do you think of this image?"
 }}
 ```
 <|end_of_turn|>
@@ -122,7 +122,7 @@ If you understand, please reply to the following:<|end_of_turn|>
                 partial_variables={"format_instructions": format_instructions},
             )
 
-            human_template = "{human_input}<|end_of_turn|>AI:"
+            human_template = "{input}<|end_of_turn|>AI:"
             human_message_prompt = HumanMessagePromptTemplate.from_template(
                 human_template,
             )
@@ -133,14 +133,14 @@ If you understand, please reply to the following:<|end_of_turn|>
                 human_message_prompt,
             ])
 
-            self.llm_chain = LLMChain(prompt=self.prompt, llm=self.llm, memory=self.memory)#, verbose=True)
+            self.llm_chain = ConversationChain(prompt=self.prompt, llm=self.llm, memory=self.memory)#, verbose=True)
 
             def chat_predict(human_input):
                 ret = self.llm_chain.invoke({
-                    'human_input': human_input,
-                })['text']
+                    'input': human_input,
+                })
                 #print(ret)
-                return ret
+                return ret['response']
 
             self.chat_predict = chat_predict
 
