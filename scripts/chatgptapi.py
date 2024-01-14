@@ -48,36 +48,10 @@ class ChatGptApi:
     def set_log(self, log_string):
         self.chatgpt_messages = json.loads(log_string)
 
-    def load_log(self, log):
-        if log is None:
-            return False
-        try:
-            self.log_file_name = log
-            if os.path.isfile(log):
-                with open(log, 'r', encoding='UTF-8') as f:
-                    self.chatgpt_messages = json.loads(f.read())
-                return True
-        except:
-            pass
-        return False
-
     def get_log(self):
         return json.dumps(self.chatgpt_messages)
 
-    def write_log(self, file_name=None):
-        if file_name is None:
-            file_name = self.log_file_name
-        if file_name is None:
-            return
-        with open(file_name + '.tmp', 'w', encoding='UTF-8') as f:
-            f.write(self.get_log())
-        if os.path.isfile(file_name):
-            os.rename(file_name, file_name + '.prev')
-        os.rename(file_name + '.tmp', file_name)
-        if os.path.isfile(file_name + '.prev'):
-            os.remove(file_name + '.prev')
-
-    def send(self, content, write_log=False):
+    def send(self, content):
         if self.chatgpt_response is not None:
             return None
         self.chatgpt_messages.append({"role": "user", "content": content})
@@ -112,17 +86,13 @@ class ChatGptApi:
         else:
             self.chatgpt_messages.append({"role": "assistant", "content": result + "\n(Generated image by the following prompt: " + prompt + ")"})
         #print(result, file=sys.stderr)
-        if write_log:
-            self.write_log()
         if ignore_result:
             result = None
         return result, prompt
 
-    def remove_last_conversation(self, result=None, write_log=False):
+    def remove_last_conversation(self, result=None):
         if result is None or self.chatgpt_messages[-1]["content"] == result:
             self.chatgpt_messages = self.chatgpt_messages[:-2]
-            if write_log:
-                self.write_log()
 
     def clear(self):
         self.chatgpt_messages = []

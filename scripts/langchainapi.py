@@ -180,18 +180,6 @@ If you understand, please reply to the following:<|end_of_turn|>
         elif chatgpt_messages['log_version'] == 2:
             self.memory.chat_memory = messages_from_dict(chatgpt_messages['messages'])
 
-    def load_log(self, log):
-        if log is None:
-            return False
-        try:
-            self.log_file_name = log
-            if os.path.isfile(log):
-                with open(log, 'r', encoding='UTF-8') as f:
-                    self.set_log(f.read())
-                return True
-        except:
-            pass
-        return False
 
     def get_log(self):
         if self.memory is None:
@@ -214,20 +202,7 @@ If you understand, please reply to the following:<|end_of_turn|>
         #    dicts['messages'] = messages_to_dict(self.memory.chat_memory)
         #return json.dumps(dicts)
 
-    def write_log(self, file_name=None):
-        if file_name is None:
-            file_name = self.log_file_name
-        if file_name is None:
-            return
-        with open(file_name + '.tmp', 'w', encoding='UTF-8') as f:
-            f.write(self.get_log())
-        if os.path.isfile(file_name):
-            os.rename(file_name, file_name + '.prev')
-        os.rename(file_name + '.tmp', file_name)
-        if os.path.isfile(file_name + '.prev'):
-            os.remove(file_name + '.prev')
-
-    def send(self, content, write_log=False):
+    def send(self, content):
         if not self.is_inited:
             self.init_model()
 
@@ -244,21 +219,16 @@ If you understand, please reply to the following:<|end_of_turn|>
             return_message = result
             return_prompt = None
 
-        if write_log:
-            self.write_log()
-
         self.is_sending = False
 
         return return_message, return_prompt
 
-    def remove_last_conversation(self, result=None, write_log=False):
+    def remove_last_conversation(self, result=None):
         if result is None or self.memory.chat_memory.messages[-1].content == result:
             if len(self.memory.chat_memory.messages) > 2:
                 self.memory.chat_memory.messages = self.memory.chat_memory.messages[:-2]
             else:
                 self.memory.chat_memory.messages.clear()
-            if write_log:
-                self.write_log()
 
     def clear(self):
         self.memory.chat_memory.clear()

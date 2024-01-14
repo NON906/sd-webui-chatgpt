@@ -311,6 +311,8 @@ def on_ui_tabs():
         chat_history = chat_history[:-1]
         chat_history = append_chat_history(chat_history, text_input_str, chatgpt_generate_result, chatgpt_generate_prompt)
 
+        chatgpt_save('_backup', chat_history)
+
         yield chat_history
 
     def chatgpt_generate_finished():
@@ -380,7 +382,8 @@ def on_ui_tabs():
         with open(file_name, 'w', encoding='UTF-8') as f:
             json.dump(json_dict, f)
 
-        print(file_name + ' is saved.')
+        if file_name != '_backup':
+            print(file_name + ' is saved.')
 
         save_files = [os.path.basename(full_path) for full_path in glob.glob(save_dir + '/*')]
         save_file_path = gr.update(choices=save_files)
