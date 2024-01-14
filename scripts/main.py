@@ -274,6 +274,9 @@ def on_ui_tabs():
 
         text_input_str = chat_history[-1][0]
 
+        if text_input_str is None or text_input_str == '':
+            return chat_history[:-1]
+
         def recv_thread_func():
             recv_stream(chat_history)
         thread = threading.Thread(target=recv_thread_func)
