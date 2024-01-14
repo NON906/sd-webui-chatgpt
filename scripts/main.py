@@ -15,7 +15,7 @@ import gradio as gr
 from PIL import PngImagePlugin
 from modules.scripts import basedir
 from modules.txt2img import txt2img
-from modules import script_callbacks, sd_samplers
+from modules import script_callbacks, sd_samplers, shared
 import modules.scripts
 from modules import generation_parameters_copypaste as params_copypaste
 from modules.paths_internal import extensions_dir
@@ -161,8 +161,13 @@ def on_ui_tabs():
             txt2img_params['prompt'] = request_prompt
         else:
             txt2img_params['prompt'] += ', ' + request_prompt
+        if shared.opts.sd_lora is not None and shared.opts.sd_lora != "None":
+            txt2img_params['prompt'] += ', '
 
         if isinstance(txt2img_params['sampler_index'], str):
+            # for v1.7.0
+            txt2img_params['sampler_name'] = txt2img_params['sampler_index']
+            # for old version
             sampler_index = 0
             for sampler_loop_index, sampler_loop in enumerate(sd_samplers.samplers):
                 if sampler_loop.name == txt2img_params['sampler_index']:
@@ -171,6 +176,9 @@ def on_ui_tabs():
 
         if 'hr_sampler_index' in txt2img_params.keys():
             if isinstance(txt2img_params['hr_sampler_index'], str):
+                # for v1.7.0
+                txt2img_params['hr_sampler_name'] = txt2img_params['hr_sampler_index']
+                # for old version
                 hr_sampler_index = 0
                 for sampler_loop_index, sampler_loop in enumerate(sd_samplers.samplers):
                     if sampler_loop.name == txt2img_params['hr_sampler_index']:
