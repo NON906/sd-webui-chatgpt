@@ -369,6 +369,8 @@ def on_ui_tabs():
         return chat_history
 
     def chatgpt_save(file_name: str, chat_history):
+        print_flag = file_name != '_backup'
+
         if os.path.dirname(file_name) == '':
             os.makedirs(os.path.join(basedir(), 'outputs', 'chatgpt', 'chat'), exist_ok=True)
             file_name = os.path.join(basedir(), 'outputs', 'chatgpt', 'chat', file_name)
@@ -382,7 +384,7 @@ def on_ui_tabs():
         with open(file_name, 'w', encoding='UTF-8') as f:
             json.dump(json_dict, f)
 
-        if file_name != '_backup':
+        if print_flag:
             print(file_name + ' is saved.')
 
         save_files = [os.path.basename(full_path) for full_path in glob.glob(save_dir + '/*')]
