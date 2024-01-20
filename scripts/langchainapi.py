@@ -100,6 +100,7 @@ class LangChainApi:
             )
             #self.llm = OpenAI(model_name="gpt-3.5-turbo")
             is_chat = False
+            prompt_template_str = self.settings['gpt4all_prompt_template']
         if self.backend == 'LlamaCpp':
             if (not 'llama_cpp_model' in self.settings) or (self.settings['llama_cpp_model'] is None):
                 return
@@ -117,6 +118,7 @@ class LangChainApi:
                 #verbose=True,
             )
             is_chat = False
+            prompt_template_str = self.settings['llama_cpp_prompt_template']
 
         if not is_chat:
             template = """
@@ -144,8 +146,6 @@ If you understand, please reply to the following:<|end_of_turn|>
             system_message_prompt = SystemMessagePromptTemplate.from_template(
                 template,
             )
-
-            prompt_template_str = "Human: {prompt}<|end_of_turn|>AI: "
 
             human_template = prompt_template_str.replace("{prompt}", "{input}")
             human_message_prompt = HumanMessagePromptTemplate.from_template(

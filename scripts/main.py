@@ -458,26 +458,34 @@ def on_ui_tabs():
                         llama_cpp_n_gpu_layers = gr.Number(label='n_gpu_layers')
                     with gr.Column():
                         llama_cpp_n_batch = gr.Number(label='n_batch')
+                with gr.Row():
+                    with gr.Column():
+                        llama_cpp_prompt_template = gr.Textbox(label='Prompt Template')
                     with gr.Column():
                         btn_llama_cpp_save = gr.Button(value='Save And Reflect', variant='primary')
-                def llama_cpp_save(path: str, n_gpu_layers: int, n_batch: int):
+                def llama_cpp_save(path: str, n_gpu_layers: int, n_batch: int, prompt_template: str):
                     chatgpt_settings['llama_cpp_model'] = path
                     chatgpt_settings['llama_cpp_n_gpu_layers'] = n_gpu_layers
                     chatgpt_settings['llama_cpp_n_batch'] = n_batch
+                    chatgpt_settings['llama_cpp_prompt_template'] = prompt_template
                     with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
                         json.dump(chatgpt_settings, f)
                     chat_gpt_api.load_settings(**chatgpt_settings)
-                btn_llama_cpp_save.click(fn=llama_cpp_save, inputs=[llama_cpp_model_file, llama_cpp_n_gpu_layers, llama_cpp_n_batch])
+                btn_llama_cpp_save.click(fn=llama_cpp_save, inputs=[llama_cpp_model_file, llama_cpp_n_gpu_layers, llama_cpp_n_batch, llama_cpp_prompt_template])
             with gr.TabItem('GPT4All', id='GPT4All') as gpt4all_tab_item:
                 with gr.Row():
                     gpt4all_model_file = gr.Textbox(label='Model File Path (*.gguf)')
-                    btn_gpt4all_save = gr.Button(value='Save And Reflect', variant='primary')
-                    def gpt4all_model_save(path):
+                    with gr.Column():
+                        gpt4all_prompt_template = gr.Textbox(label='Prompt Template')
+                    with gr.Column():
+                        btn_gpt4all_save = gr.Button(value='Save And Reflect', variant='primary')
+                    def gpt4all_model_save(path: str, prompt_template: str):
                         chatgpt_settings['gpt4all_model'] = path
+                        chatgpt_settings['gpt4all_prompt_template'] = prompt_template
                         with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
                             json.dump(chatgpt_settings, f)
                         chat_gpt_api.load_settings(**chatgpt_settings)
-                    btn_gpt4all_save.click(fn=gpt4all_model_save, inputs=gpt4all_model_file)
+                    btn_gpt4all_save.click(fn=gpt4all_model_save, inputs=[gpt4all_model_file, gpt4all_prompt_template])
         def setting_openai_api_tab_item_select():
             chatgpt_settings['backend'] = 'OpenAI API'
             with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
@@ -583,11 +591,15 @@ def on_ui_tabs():
                 chatgpt_settings['llama_cpp_n_gpu_layers'] = 20
             if not 'llama_cpp_n_batch' in chatgpt_settings:
                 chatgpt_settings['llama_cpp_n_batch'] = 128
+            if not 'llama_cpp_prompt_template' in chatgpt_settings:
+                chatgpt_settings['llama_cpp_prompt_template'] = 'Human: {prompt}<|end_of_turn|>AI: '
+            if not 'gpt4all_prompt_template' in chatgpt_settings:
+                chatgpt_settings['gpt4all_prompt_template'] = 'Human: {prompt}<|end_of_turn|>AI: '
 
             ret = [apikey, chatgpt_settings['model'], json_settings, setting_part_tabs_out, save_file_path,
                 chatgpt_settings['llama_cpp_n_gpu_layers'], chatgpt_settings['llama_cpp_n_batch']]
 
-            for key in ['llama_cpp_model', 'gpt4all_model']:
+            for key in ['llama_cpp_model', 'gpt4all_model', 'llama_cpp_prompt_template', 'gpt4all_prompt_template']:
                 if key in chatgpt_settings:
                     ret.append(chatgpt_settings[key])
                 else:
@@ -597,7 +609,8 @@ def on_ui_tabs():
 
         runner_interface.load(on_load, outputs=[txt_apikey, txt_chatgpt_model, txt_json_settings, setting_part_tabs, txt_file_path,
             llama_cpp_n_gpu_layers, llama_cpp_n_batch,
-            llama_cpp_model_file, gpt4all_model_file])
+            llama_cpp_model_file, gpt4all_model_file,
+            llama_cpp_prompt_template, gpt4all_prompt_template])
 
     return [(runner_interface, 'sd-webui-chatgpt', 'chatgpt_interface')]
 
