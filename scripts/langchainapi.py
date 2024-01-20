@@ -250,7 +250,7 @@ If you understand, please reply to the following:<|end_of_turn|>
         self.log_file_name = None
 
     def get_stream(self):
-        if self.callback is None:
+        if self.callback is None or self.callback.recieved_message == '':
             return None, None
         return_message, return_prompt = self.parse_message(self.callback.recieved_message)
         if len(return_message) > 0 and return_message[-1] == '!':
