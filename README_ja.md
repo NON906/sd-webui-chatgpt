@@ -1,7 +1,7 @@
 # sd-webui-chatgpt
 
-[Stable Diffusion web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui)で[ChatGPT](https://openai.com/blog/chatgpt)を利用するためのリポジトリです。  
-「画像を生成して」などの発言をすると、ChatGPTがプロンプトを自動生成して画像を生成してくれます。
+[Stable Diffusion web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui)で[OpenAI API](https://platform.openai.com/overview)（[ChatGPT](https://openai.com/blog/chatgpt)互換）や[llama.cpp](https://github.com/ggerganov/llama.cpp)で会話をするためのリポジトリです。  
+「画像を生成して」などの発言をすると、プロンプトを自動生成して画像を生成してくれます。
 
 ## サンプル
 
@@ -29,7 +29,7 @@
 
 ## 導入方法
 
-1. [ChatGPTのAPIキー](https://platform.openai.com/account/api-keys)が必要です（一部を除いて有料）。  
+1. [OpenAI APIキー](https://platform.openai.com/account/api-keys)が必要です（一部を除いて有料）。  
 持っていない場合は、登録して発行してください。
 
 2. webuiを起動し、「拡張機能(Extensions)」の「URLからインストール(Install from URL)」から以下のURLを入力し、インストールしてください。
@@ -39,6 +39,6 @@ https://github.com/NON906/sd-webui-chatgpt.git
 
 3. 「拡張機能(Extensions)」の「インストール済(Installed)」の「適用してUIを再起動(Apply and restart UI)」をクリックし、再起動してください。
 
-4. 「sd-webui-chatgpt」タブの「設定(Settings)」の「API キー(API Key)」にChatGPTのAPIキーを入力してください。
+4. 「sd-webui-chatgpt」タブの「設定(Settings)」の「API キー(API Key)」にAPIキーを入力してください。
 
-これで「sd-webui-chatgpt」タブの「Chat」からChatGPTと会話できるようになります。
+これで「sd-webui-chatgpt」タブの「Chat」から会話できるようになります。
