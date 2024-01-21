@@ -458,20 +458,23 @@ def on_ui_tabs():
                         llama_cpp_n_gpu_layers = gr.Number(label='n_gpu_layers')
                     with gr.Column():
                         llama_cpp_n_batch = gr.Number(label='n_batch')
+                    with gr.Column():
+                        llama_cpp_n_ctx = gr.Number(label='n_ctx')
                 with gr.Row():
                     with gr.Column():
                         llama_cpp_prompt_template = gr.Textbox(label='Prompt Template')
                     with gr.Column():
                         btn_llama_cpp_save = gr.Button(value='Save And Reflect', variant='primary')
-                def llama_cpp_save(path: str, n_gpu_layers: int, n_batch: int, prompt_template: str):
+                def llama_cpp_save(path: str, n_gpu_layers: int, n_batch: int, n_ctx: int, prompt_template: str):
                     chatgpt_settings['llama_cpp_model'] = path
                     chatgpt_settings['llama_cpp_n_gpu_layers'] = n_gpu_layers
                     chatgpt_settings['llama_cpp_n_batch'] = n_batch
+                    chatgpt_settings['llama_cpp_n_ctx'] = n_ctx
                     chatgpt_settings['llama_cpp_prompt_template'] = prompt_template
                     with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
                         json.dump(chatgpt_settings, f)
                     chat_gpt_api.load_settings(**chatgpt_settings)
-                btn_llama_cpp_save.click(fn=llama_cpp_save, inputs=[llama_cpp_model_file, llama_cpp_n_gpu_layers, llama_cpp_n_batch, llama_cpp_prompt_template])
+                btn_llama_cpp_save.click(fn=llama_cpp_save, inputs=[llama_cpp_model_file, llama_cpp_n_gpu_layers, llama_cpp_n_batch, llama_cpp_n_ctx, llama_cpp_prompt_template])
             with gr.TabItem('GPT4All', id='GPT4All') as gpt4all_tab_item:
                 with gr.Row():
                     gpt4all_model_file = gr.Textbox(label='Model File Path (*.gguf)')
@@ -524,8 +527,8 @@ def on_ui_tabs():
         set_interactive_items = [text_input, btn_generate, btn_regenerate,
             btn_remove_last, btn_clear, btn_load, btn_save,
             txt_apikey, btn_apikey_save, txt_chatgpt_model, btn_chatgpt_model_save,
-            llama_cpp_model_file, llama_cpp_n_gpu_layers, llama_cpp_n_batch, btn_llama_cpp_save,
-            gpt4all_model_file, btn_gpt4all_save,
+            llama_cpp_model_file, llama_cpp_n_gpu_layers, llama_cpp_n_batch, btn_llama_cpp_save, llama_cpp_prompt_template, llama_cpp_n_ctx,
+            gpt4all_model_file, btn_gpt4all_save, gpt4all_prompt_template,
             txt_json_settings, btn_settings_save, btn_settings_reflect]
 
         btn_generate.click(
@@ -591,13 +594,15 @@ def on_ui_tabs():
                 chatgpt_settings['llama_cpp_n_gpu_layers'] = 20
             if not 'llama_cpp_n_batch' in chatgpt_settings:
                 chatgpt_settings['llama_cpp_n_batch'] = 128
+            if not 'llama_cpp_n_ctx' in chatgpt_settings:
+                chatgpt_settings['llama_cpp_n_ctx'] = 2048
             if not 'llama_cpp_prompt_template' in chatgpt_settings:
                 chatgpt_settings['llama_cpp_prompt_template'] = 'Human: {prompt}<|end_of_turn|>AI: '
             if not 'gpt4all_prompt_template' in chatgpt_settings:
                 chatgpt_settings['gpt4all_prompt_template'] = 'Human: {prompt}<|end_of_turn|>AI: '
 
             ret = [apikey, chatgpt_settings['model'], json_settings, setting_part_tabs_out, save_file_path,
-                chatgpt_settings['llama_cpp_n_gpu_layers'], chatgpt_settings['llama_cpp_n_batch']]
+                chatgpt_settings['llama_cpp_n_gpu_layers'], chatgpt_settings['llama_cpp_n_batch'], chatgpt_settings['llama_cpp_n_ctx']]
 
             for key in ['llama_cpp_model', 'gpt4all_model', 'llama_cpp_prompt_template', 'gpt4all_prompt_template']:
                 if key in chatgpt_settings:
@@ -608,7 +613,7 @@ def on_ui_tabs():
             return ret
 
         runner_interface.load(on_load, outputs=[txt_apikey, txt_chatgpt_model, txt_json_settings, setting_part_tabs, txt_file_path,
-            llama_cpp_n_gpu_layers, llama_cpp_n_batch,
+            llama_cpp_n_gpu_layers, llama_cpp_n_batch, llama_cpp_n_ctx,
             llama_cpp_model_file, gpt4all_model_file,
             llama_cpp_prompt_template, gpt4all_prompt_template])
 

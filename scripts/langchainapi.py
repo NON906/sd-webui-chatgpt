@@ -103,11 +103,13 @@ class LangChainApi:
                 self.settings['llama_cpp_n_gpu_layers'] = 20
             if not 'llama_cpp_n_batch' in self.settings:
                 self.settings['llama_cpp_n_batch'] = 128
+            if not 'llama_cpp_n_ctx' in self.settings:
+                self.settings['llama_cpp_n_ctx'] = 2048
             self.llm = LlamaCpp(
                 model_path=self.settings['llama_cpp_model'],
                 n_gpu_layers=self.settings['llama_cpp_n_gpu_layers'],
                 n_batch=self.settings['llama_cpp_n_batch'],
-                n_ctx=2048,
+                n_ctx=self.settings['llama_cpp_n_ctx'],
                 streaming=True,
                 callback_manager=AsyncCallbackManager([self.callback]),
                 #verbose=True,
