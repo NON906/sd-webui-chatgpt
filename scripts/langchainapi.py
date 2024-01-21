@@ -241,9 +241,9 @@ If you understand, please reply to the following:<|end_of_turn|>
         if self.callback is None or self.callback.recieved_message == '':
             return None, None
         return_message, return_prompt = self.parse_message(self.callback.recieved_message)
-        if len(return_message) > 0 and return_message[-1] == '!':
+        if return_message is not None and len(return_message) > 0 and return_message[-1] == '!':
             return_message = return_message[:-1]
-        if return_message.isspace():
+        if return_message is None or return_message.isspace():
             return_message = None
         return return_message, return_prompt
 
