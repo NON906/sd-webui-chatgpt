@@ -261,7 +261,7 @@ If you understand, please reply to the following:<|end_of_turn|>
                 if prompt is None:
                     prompt = tag[len('!['):-len('](sd-prompt:// "result")')]
                 ret_message = ret_message.replace(tag, '')
-        if ret_message == '':
+        if ret_message.isspace():
             return None, prompt
         end_index = ret_message.rfind('![')
         if end_index >= 0:
