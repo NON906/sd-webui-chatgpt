@@ -136,7 +136,6 @@ This prompt is automatically deleted and is not visible to the human.
 The image is always output at the end, not at the location where it is added.
 If there are multiple entries, only the first one will be reflected.
 There is no memory function, so please carry over the prompts from past conversations.
-Please output it first if possible.
 <|end_of_turn|>
 If you understand, please reply to the following:<|end_of_turn|>
 """

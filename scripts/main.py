@@ -326,7 +326,7 @@ def on_ui_tabs():
             del chat_history_images[str(len(chat_history) - 1)]
         input_text = chat_history[-1][0]
         chat_history = chat_history[:-1]
-        if input_text is None or input_text == '':
+        if input_text is None or input_text.isspace():
             if str(len(chat_history) - 1) in chat_history_images.keys():
                 del chat_history_images[str(len(chat_history) - 1)]
             input_text = chat_history[-1][0]
