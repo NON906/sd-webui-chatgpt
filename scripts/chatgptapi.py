@@ -85,9 +85,11 @@ class ChatGptApi:
         #    self.chatgpt_messages.append({"role": "assistant", "content": "(Generated image by the following prompt: " + prompt + ")"})
         else:
             self.chatgpt_messages.append({"role": "assistant", "content": result + "\n(Generated image by the following prompt: " + prompt + ")"})
+            result += '\n_' + prompt + '_'
         #print(result, file=sys.stderr)
         if ignore_result:
-            result = None
+            result = '_' + prompt + '_'
+            #result = None
         return result, prompt
 
     def remove_last_conversation(self, result=None):
