@@ -166,42 +166,30 @@ If you understand, please reply to the following:<|end_of_turn|>
 
     def set_log(self, log_string):
         chatgpt_messages = json.loads(log_string)
-        if not 'log_version' in chatgpt_messages:
+        if type(chatgpt_messages) is not dict or not 'log_version' in chatgpt_messages:
             history = ChatMessageHistory()
             for mes in chatgpt_messages:
                 if mes['role'] == 'user':
                     history.add_user_message(mes['content'])
                 elif mes['role'] == 'assistant':
-                    if '\n(Generated image by the following prompt: ' in mes['content']:
-                        mes_content, mes_prompt = mes['content'].split('\n(Generated image by the following prompt: ')
-                        mes_prompt = mes_prompt[::-1].replace(')', '', 1)[::-1]
-                        mes_json = json.dumps({
-                            "prompt": mes_prompt,
-                            "message": mes_content,
-                        })
-                    else:
-                        mes_json = json.dumps({
-                            "message": mes['content'],
-                        })
-                    history.add_ai_message(mes_json)
+                    add_mes = re.sub("\(Generated image by the following prompt: (.*)\)", r'![\1](sd-prompt:// "result")', mes['content'])
+                    history.add_ai_message(add_mes)
             self.memory.chat_memory = history
         elif chatgpt_messages['log_version'] == 2:
             self.memory.chat_memory = messages_from_dict(chatgpt_messages['messages'])
 
-
     def get_log(self):
-        if self.memory is None:
+        if self.memory is None or self.memory.chat_memory is None:
             return '[]'
         ret_messages = []
-        for mes in self.memory.chat_memory:
-            if type(mes) is HumanMessage:
-                ret_messages.append({"role": "user", "content": mes.content})
-            elif type(mes) is AIMessage:
-                mes_dict = json.loads(mes.content)
-                add_mes = mes_dict['message']
-                if 'prompt' in mes_dict and mes_dict['prompt'] is not None and mes_dict['prompt'] != "":
-                    add_mes += "\n(Generated image by the following prompt: " + mes_dict['prompt'] + ")"
-                ret_messages.append({"role": "assistant", "content": add_mes})
+        for name, messages in self.memory.chat_memory:
+            if name == 'messages':
+                for mes in messages:
+                    if isinstance(mes, HumanMessage):
+                        ret_messages.append({"role": "user", "content": mes.content})
+                    elif isinstance(mes, AIMessage):
+                        add_mes = re.sub('\!\[(.*?)\]\(sd-prompt\:// "result"\)', r'(Generated image by the following prompt: \1)', mes.content)
+                        ret_messages.append({"role": "assistant", "content": add_mes})
         return json.dumps(ret_messages)
         #dicts = {'log_version': 2}
         #if self.memory is None:
