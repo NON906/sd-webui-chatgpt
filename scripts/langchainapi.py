@@ -49,16 +49,16 @@ class TemplateMessagesPrompt(StringPromptTemplate):
 
     def format(self, **kwargs: Any) -> str:
         splited = self.template.split("{prompt}")
-        human_template = splited[0] + "{prompt}"
-        ai_template = splited[1] + "{response}\n"
+        human_template = splited[0]
+        ai_template = splited[1]
 
         input_mes_list = kwargs[self.history_name]
         messages = self.system_message + '\n'
         for mes in input_mes_list:
             if type(mes) is HumanMessage:
-                messages += human_template.replace("{prompt}", mes.content)
+                messages += human_template + mes.content
             elif type(mes) is AIMessage:
-                messages += ai_template.replace("{response}", mes.content)
+                messages += ai_template + mes.content + "\n"
         messages += self.template.replace("{prompt}", kwargs[self.input_name])
         #print(messages)
         return messages
@@ -136,6 +136,7 @@ This prompt is automatically deleted and is not visible to the human.
 The image is always output at the end, not at the location where it is added.
 If there are multiple entries, only the first one will be reflected.
 There is no memory function, so please carry over the prompts from past conversations.
+Please output it first if possible.
 <|end_of_turn|>
 If you understand, please reply to the following:<|end_of_turn|>
 """
@@ -245,7 +246,7 @@ If you understand, please reply to the following:<|end_of_turn|>
         ret_message = full_message
         prompt = None
         for tag in prompt_tags:
-            if '](sd-prompt:// "result")' in tag:
+            if tag.endswith('](sd-prompt:// "result")'):
                 if prompt is None:
                     prompt = tag[len('!['):-len('](sd-prompt:// "result")')]
                 ret_message = ret_message.replace(tag, '')
