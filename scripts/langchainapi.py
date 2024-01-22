@@ -123,16 +123,15 @@ class LangChainApi:
 You also have the function to generate image with Stable Diffusion.
 If you want to use this function, please add the following to your message.
 
-![PROMPT](sd-prompt:// "result")
+![sd-prompt: PROMPT](sd://)
 
 PROMPT contains the prompt to generate the image.
 Prompt is comma separated keywords.
 If it is not in English, please translate it into English (lang:en).
 For example, if you want to output "a school girl wearing a red ribbon", it would be as follows.
 
-![1girl, school uniform, red ribbon](sd-prompt:// "result")
+![sd-prompt: 1girl, school uniform, red ribbon](sd://)
 
-This prompt is automatically deleted and is not visible to the human.
 The image is always output at the end, not at the location where it is added.
 If there are multiple entries, only the first one will be reflected.
 There is no memory function, so please carry over the prompts from past conversations.
@@ -172,7 +171,7 @@ If you understand, please reply to the following:<|end_of_turn|>
                 if mes['role'] == 'user':
                     history.add_user_message(mes['content'])
                 elif mes['role'] == 'assistant':
-                    add_mes = re.sub("\(Generated image by the following prompt: (.*)\)", r'![\1](sd-prompt:// "result")', mes['content'])
+                    add_mes = re.sub("\(Generated image by the following prompt: (.*)\)", r'![sd-prompt: \1](sd://)', mes['content'])
                     history.add_ai_message(add_mes)
             self.memory.chat_memory = history
         elif chatgpt_messages['log_version'] == 2:
@@ -188,7 +187,7 @@ If you understand, please reply to the following:<|end_of_turn|>
                     if isinstance(mes, HumanMessage):
                         ret_messages.append({"role": "user", "content": mes.content})
                     elif isinstance(mes, AIMessage):
-                        add_mes = re.sub('\!\[(.*?)\]\(sd-prompt\:// "result"\)', r'(Generated image by the following prompt: \1)', mes.content)
+                        add_mes = re.sub('\!\[sd-prompt\: (.*?)\]\(sd\://\)', r'(Generated image by the following prompt: \1)', mes.content)
                         ret_messages.append({"role": "assistant", "content": add_mes})
         return json.dumps(ret_messages)
         #dicts = {'log_version': 2}
@@ -240,17 +239,23 @@ If you understand, please reply to the following:<|end_of_turn|>
             return full_message, None
         prompt_tags = re.findall('\!\[.*?\]\(.*?\)', full_message)
         if len(prompt_tags) <= 0:
+            if '![sd-prompt: ' in full_message:
+                full_message = full_message.replace('![sd-prompt: ', '_').split(']')[0] + '_'
             end_index = full_message.rfind('![')
-            return full_message[:end_index], None
+            if end_index >= 0:
+                return full_message[:end_index], None
+            return full_message, None
         ret_message = full_message
         prompt = None
         for tag in prompt_tags:
-            if tag.endswith('](sd-prompt:// "result")'):
+            if tag.startswith('![sd-prompt: ') and tag.endswith('](sd://)'):
                 if prompt is None:
-                    prompt = tag[len('!['):-len('](sd-prompt:// "result")')]
-                ret_message = ret_message.replace(tag, '')
+                    prompt = tag[len('![sd-prompt: '):-len('](sd://)')]
+                ret_message = ret_message.replace(tag, '_' + prompt + '_')
         if ret_message.isspace():
             return None, prompt
+        if '![sd-prompt: ' in ret_message:
+            ret_message = ret_message.replace('![sd-prompt: ', '_').split(']')[0] + '_'
         end_index = ret_message.rfind('![')
         if end_index >= 0:
             return ret_message[:end_index], prompt
