@@ -203,7 +203,16 @@ def on_ui_tabs():
 
         global info_js, info_html, comments_html, last_prompt, last_seed, last_image_name
 
-        txt2img_args_sig = inspect.signature(txt2img)
+        has_create_processing = False
+        for name, _ in inspect.getmembers(modules.txt2img):
+            if name == 'txt2img_create_processing':
+                has_create_processing = True
+                break
+        if has_create_processing:
+            from modules.txt2img import txt2img_create_processing
+            txt2img_args_sig = inspect.signature(txt2img_create_processing)
+        else:
+            txt2img_args_sig = inspect.signature(txt2img)
         txt2img_args_sig_pairs = txt2img_args_sig.parameters
         txt2img_args_names = txt2img_args_sig_pairs.keys()
         txt2img_args_values = list(txt2img_args_sig_pairs.values())
