@@ -19,7 +19,7 @@ if not launch.is_installed('gpt-stream-json-parser'):
 if launch.args.api:
     launch.run_pip('install -U h11 uvicorn fastapi', 'h11')
 
-pip_list_str = launch.run('pip list')
+pip_list_str = launch.run(f'"{launch.python}" -m pip list')
 pip_list_lines = pip_list_str.splitlines()
 
 torch_lines = [item for item in pip_list_lines if item.startswith('torch')]
