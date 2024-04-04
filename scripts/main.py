@@ -544,7 +544,7 @@ def on_ui_tabs():
                 fn=lambda: [gr.update(interactive=False) for _ in set_interactive_items],
                 outputs=set_interactive_items,
             ).then(
-                fn=lambda t, c: ['', c + [(t, None)]], 
+                fn=lambda t, c: ['', c + [(t, None)] if c is not None else [(t, None)]],
                 inputs=[text_input, chatbot],
                 outputs=[text_input, chatbot],
                 queue=False,
@@ -572,7 +572,7 @@ def on_ui_tabs():
                 outputs=[text_input, chatbot],
                 queue=False,
             ).then(
-                fn=lambda t, c: ['', c + [(t, None)]], 
+                fn=lambda t, c: ['', c + [(t, None)] if c is not None else [(t, None)]],
                 inputs=[text_input, chatbot],
                 outputs=[text_input, chatbot],
                 queue=False,
