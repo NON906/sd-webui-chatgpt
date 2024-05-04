@@ -5,6 +5,7 @@ import os
 import sys
 import json
 import re
+import asyncio
 #from gpt_stream_parser import force_parse_json
 from langchain_community.llms import GPT4All, LlamaCpp
 from langchain.memory import ConversationBufferMemory, ChatMessageHistory
@@ -36,9 +37,13 @@ from langchain.callbacks.manager import AsyncCallbackManager
 class StreamingLLMCallbackHandler(AsyncCallbackHandler):
     def __init__(self):
         self.recieved_message = ''
+        self.is_cancel = False
 
-    def on_llm_new_token(self, token: str, **kwargs) -> None:
+    async def on_llm_new_token(self, token: str, **kwargs) -> None:
         self.recieved_message += token
+        if self.is_cancel:
+            self.is_cancel = False
+            raise asyncio.CancelledError
 
 
 class TemplateMessagesPrompt(StringPromptTemplate):
@@ -148,9 +153,15 @@ If you understand, please reply to the following:<|end_of_turn|>
             self.llm_chain = ConversationChain(prompt=self.prompt, llm=self.llm, memory=self.memory)#, verbose=True)
 
             def chat_predict(human_input):
-                ret = self.llm_chain.invoke({
-                    'input': human_input,
-                })
+                if self.callback.is_cancel:
+                    self.callback.is_cancel = False
+                    return None
+                try:
+                    ret = self.llm_chain.invoke({
+                        'input': human_input,
+                    })
+                except asyncio.CancelledError:
+                    return None
                 #print(ret)
                 return ret['response']
 
@@ -206,7 +217,10 @@ If you understand, please reply to the following:<|end_of_turn|>
         self.is_sending = True
 
         result = self.chat_predict(human_input=content)
-        return_message, return_prompt = self.parse_message(result)
+        if result is None:
+            return_message, return_prompt = None, None
+        else:
+            return_message, return_prompt = self.parse_message(result)
 
         self.is_sending = False
         self.callback.recieved_message = ''
@@ -260,3 +274,6 @@ If you understand, please reply to the following:<|end_of_turn|>
         if end_index >= 0:
             return ret_message[:end_index], prompt
         return ret_message, prompt
+
+    def abort(self):
+        self.callback.is_cancel = True

@@ -32,6 +32,7 @@ class ChatGptApi:
     model = 'gpt-3.5-turbo'
     recieved_json = ''
     recieved_message = ''
+    is_abort = False
 
     def __init__(self, model=None, apikey=None):
         if model is not None:
@@ -53,7 +54,7 @@ class ChatGptApi:
 
     def send(self, content):
         if self.chatgpt_response is not None:
-            return None
+            return None, None
         self.chatgpt_messages.append({"role": "user", "content": content})
         self.chatgpt_response = openai.ChatCompletion.create(
             model=self.model,
@@ -65,6 +66,9 @@ class ChatGptApi:
         self.recieved_json = ''
         self.recieved_message = ''
         for chunk in self.chatgpt_response:
+            if self.is_abort:
+                self.is_abort = False
+                return None, None
             if 'function_call' in chunk.choices[0].delta and chunk.choices[0].delta.function_call is not None and 'arguments' in chunk.choices[0].delta.function_call:
                 self.recieved_json += chunk.choices[0].delta.function_call.arguments
             else:
@@ -112,3 +116,6 @@ class ChatGptApi:
                 return func_args["message"], None
         else:
             return None, None
+
+    def abort(self):
+        self.is_abort = True

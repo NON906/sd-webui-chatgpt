@@ -354,6 +354,11 @@ def on_ui_tabs():
         chat_gpt_api.clear()
         return []
 
+    def chatgpt_abort():
+        global stop_recv_thread
+        chat_gpt_api.abort()
+        stop_recv_thread = True
+
     def chatgpt_load(file_name: str, chat_history):
         if os.path.dirname(file_name) == '':
             file_name = os.path.join(basedir(), 'outputs', 'chatgpt', 'chat', file_name)
@@ -412,6 +417,7 @@ def on_ui_tabs():
                     btn_regenerate = gr.Button(value='Regenerate')
                     btn_remove_last = gr.Button(value='Remove last')
                     btn_clear = gr.Button(value='Clear all')
+                    btn_abort = gr.Button(value='Abort', interactive=False)
                 with gr.Row():
                     txt_file_path = gr.Dropdown(value='', allow_custom_value=True, label='File name or path')
                     btn_load = gr.Button(value='Load')
@@ -549,9 +555,15 @@ def on_ui_tabs():
                 outputs=[text_input, chatbot],
                 queue=False,
             ).then(
+                fn=lambda: gr.update(interactive=True),
+                outputs=btn_abort,
+            ).then(
                 fn=chatgpt_generate,
                 inputs=chatbot,
                 outputs=chatbot,
+            ).then(
+                fn=lambda: gr.update(interactive=False),
+                outputs=btn_abort,
             ).then(
                 fn=lambda: [gr.update(interactive=True) for _ in set_interactive_items],
                 outputs=set_interactive_items,
@@ -577,9 +589,15 @@ def on_ui_tabs():
                 outputs=[text_input, chatbot],
                 queue=False,
             ).then(
+                fn=lambda: gr.update(interactive=True),
+                outputs=btn_abort,
+            ).then(
                 fn=chatgpt_generate,
                 inputs=chatbot,
                 outputs=chatbot,
+            ).then(
+                fn=lambda: gr.update(interactive=False),
+                outputs=btn_abort,
             ).then(
                 fn=lambda: [gr.update(interactive=True) for _ in set_interactive_items],
                 outputs=set_interactive_items,
@@ -592,6 +610,8 @@ def on_ui_tabs():
             outputs=[text_input, chatbot])
         btn_clear.click(fn=chatgpt_clear,
             outputs=chatbot)
+        btn_abort.click(fn=chatgpt_abort,
+            queue=False)
 
         def on_load():
             lines = txt2img_params_json.count('\n') + 1
