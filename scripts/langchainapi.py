@@ -157,7 +157,29 @@ class LangChainApi:
             is_chat = False
 
         if not is_chat:
-            system_message = """You are a chatbot having a conversation with a human.
+            if 'llama_cpp_system_message_language' in self.settings and self.settings['llama_cpp_system_message_language'] == 'Japanese':
+                system_message = """あなたは人間と会話するチャットボットです。
+
+また、あなたはStable Diffusionで画像を生成する機能があります。
+その機能を実行する場合は、以下をあなたの返信内容に加えてください。
+
+![sd-prompt: PROMPT](sd:// "result")
+
+PROMPTは画像生成に使用するプロンプトに置き換えてください。
+このプロンプトはカンマ区切りの英語のキーワードの羅列です。
+プロンプトが英語でない場合は、英語(lang:en)に翻訳してください。
+例えば、「赤いリボンを付けた学生の女の子」を生成したい場合は、以下のようにしてください。
+
+![sd-prompt: 1girl, school uniform, red ribbon](sd:// "result")
+
+この画像は返信メッセージの後に表示されます。
+このプロンプトが複数存在する場合は、最初のプロンプトの画像のみが生成されます。
+この画像生成機能に、記憶する機能は無いので、過去の会話内容も反映させてください。
+<|end_of_turn|>
+この内容を理解したら、以下の内容に返事をしてください:<|end_of_turn|>
+"""
+            else:
+                system_message = """You are a chatbot having a conversation with a human.
 
 You also have the function to generate image with Stable Diffusion.
 If you want to use this function, please add the following to your message.
