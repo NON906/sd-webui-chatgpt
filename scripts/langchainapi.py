@@ -69,6 +69,32 @@ class TemplateMessagesPrompt(StringPromptTemplate):
         return messages
 
 
+class NewTemplateMessagesPrompt(StringPromptTemplate):
+    full_template: str = ''
+    human_template: str = ''
+    ai_template: str = ''
+    system_message: str = ''
+    history_name: str = 'history'
+    input_name: str = 'input'
+
+    def format(self, **kwargs: Any) -> str:
+        full_template = self.full_template.replace("{system}", self.system_message)
+        human_template_before, human_template_after = self.human_template.split("{message}")
+        ai_template_before, ai_template_after = self.ai_template.split("{message}")
+
+        input_mes_list = kwargs[self.history_name]
+        messages = ''
+        for mes in input_mes_list:
+            if type(mes) is HumanMessage:
+                messages += human_template_before + mes.content + human_template_after
+            elif type(mes) is AIMessage:
+                messages += ai_template_before + mes.content + ai_template_after
+        messages += human_template_before + kwargs[self.input_name] + human_template_after + ai_template_before
+        full_messages = full_template.replace("{messages}", messages)
+        #print(full_messages)
+        return full_messages
+
+
 class LangChainApi:
     log_file_name = None
     is_sending = False
@@ -110,6 +136,14 @@ class LangChainApi:
                 self.settings['llama_cpp_n_batch'] = 128
             if not 'llama_cpp_n_ctx' in self.settings:
                 self.settings['llama_cpp_n_ctx'] = 2048
+            full_template_str = self.settings['llama_cpp_full_template']
+            human_template_str = self.settings['llama_cpp_human_template']
+            ai_template_str = self.settings['llama_cpp_ai_template']
+            stop_word = ai_template_str.split("{message}")[-1]
+            if not stop_word.isspace():
+                stop_words = [stop_word, ]
+            else:
+                stop_words = []
             self.llm = LlamaCpp(
                 model_path=self.settings['llama_cpp_model'],
                 n_gpu_layers=self.settings['llama_cpp_n_gpu_layers'],
@@ -117,10 +151,10 @@ class LangChainApi:
                 n_ctx=self.settings['llama_cpp_n_ctx'],
                 streaming=True,
                 callback_manager=AsyncCallbackManager([self.callback]),
+                stop=stop_words,
                 #verbose=True,
             )
             is_chat = False
-            prompt_template_str = self.settings['llama_cpp_prompt_template']
 
         if not is_chat:
             system_message = """You are a chatbot having a conversation with a human.
@@ -144,11 +178,20 @@ There is no memory function, so please carry over the prompts from past conversa
 If you understand, please reply to the following:<|end_of_turn|>
 """
 
-            self.prompt = TemplateMessagesPrompt(
-                system_message=system_message,
-                template=prompt_template_str,
-                input_variables=['history', 'input'],
-            )
+            if self.backend == 'GPT4All':
+                self.prompt = TemplateMessagesPrompt(
+                    system_message=system_message,
+                    template=prompt_template_str,
+                    input_variables=['history', 'input'],
+                )
+            else:
+                self.prompt = NewTemplateMessagesPrompt(
+                    system_message=system_message,
+                    full_template=full_template_str,
+                    human_template=human_template_str,
+                    ai_template=ai_template_str,
+                    input_variables=['history', 'input'],
+                )
 
             self.llm_chain = ConversationChain(prompt=self.prompt, llm=self.llm, memory=self.memory)#, verbose=True)
 
