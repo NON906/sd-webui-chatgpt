@@ -10,6 +10,9 @@ if not launch.is_installed('langchain'):
 #if not launch.is_installed('langchainhub'):
 #    launch.run_pip('install langchainhub', 'langchainhub')
 
+if not launch.is_installed('langchain_community'):
+    launch.run_pip('install langchain_community', 'langchain_community')
+
 if not launch.is_installed('gpt4all'):
     launch.run_pip('install gpt4all', 'gpt4all')
 

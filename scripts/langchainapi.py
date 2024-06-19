@@ -8,7 +8,8 @@ import re
 import asyncio
 #from gpt_stream_parser import force_parse_json
 from langchain_community.llms import GPT4All, LlamaCpp
-from langchain.memory import ConversationBufferMemory, ChatMessageHistory
+from langchain.memory import ConversationBufferMemory
+from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain.schema import (
     AIMessage,
     HumanMessage,
