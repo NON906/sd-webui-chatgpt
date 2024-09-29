@@ -147,9 +147,9 @@ class LangChainApi:
                 stop_words = []
             self.llm = LlamaCpp(
                 model_path=self.settings['llama_cpp_model'],
-                n_gpu_layers=self.settings['llama_cpp_n_gpu_layers'],
-                n_batch=self.settings['llama_cpp_n_batch'],
-                n_ctx=self.settings['llama_cpp_n_ctx'],
+                n_gpu_layers=int(self.settings['llama_cpp_n_gpu_layers']),
+                n_batch=int(self.settings['llama_cpp_n_batch']),
+                n_ctx=int(self.settings['llama_cpp_n_ctx']),
                 streaming=True,
                 callback_manager=AsyncCallbackManager([self.callback]),
                 stop=stop_words,

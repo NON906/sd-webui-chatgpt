@@ -5,13 +5,10 @@ import launch
 import os
 
 if not launch.is_installed('langchain'):
-    launch.run_pip('install langchain', 'langchain')
-
-#if not launch.is_installed('langchainhub'):
-#    launch.run_pip('install langchainhub', 'langchainhub')
+    launch.run_pip('install "langchain<0.3"', 'langchain')
 
 if not launch.is_installed('langchain_community'):
-    launch.run_pip('install langchain_community', 'langchain_community')
+    launch.run_pip('install "langchain_community<0.3"', 'langchain_community')
 
 if not launch.is_installed('gpt4all'):
     launch.run_pip('install gpt4all', 'gpt4all')
