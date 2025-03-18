@@ -34,11 +34,19 @@ from langchain.callbacks.manager import AsyncCallbackManager
 #from langchain_community.llms import OpenAI
 #os.environ['OPENAI_API_KEY'] = 'foo'
 
+from langchain_community.chat_models.ollama import ChatOllama
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+
 
 class StreamingLLMCallbackHandler(AsyncCallbackHandler):
     def __init__(self):
         self.recieved_message = ''
         self.is_cancel = False
+
+    def on_chat_model_start(
+        self, serialized, messages, **kwargs
+    ):
+        return
 
     async def on_llm_new_token(self, token: str, **kwargs) -> None:
         self.recieved_message += token
@@ -156,10 +164,25 @@ class LangChainApi:
                 #verbose=True,
             )
             is_chat = False
+        if self.backend == 'Ollama':
+            if (not 'ollama_model' in self.settings) or (self.settings['ollama_model'] is None):
+                return
+            if not 'llama_cpp_n_gpu_layers' in self.settings:
+                self.settings['llama_cpp_n_gpu_layers'] = 20
+            if not 'llama_cpp_n_ctx' in self.settings:
+                self.settings['llama_cpp_n_ctx'] = 2048
+            self.llm = ChatOllama(
+                model=self.settings['ollama_model'],
+                num_gpu=int(self.settings['llama_cpp_n_gpu_layers']),
+                num_ctx=int(self.settings['llama_cpp_n_ctx']),
+                streaming=True,
+                callback_manager=AsyncCallbackManager([self.callback]),
+                #verbose=True,
+            )
+            is_chat = True
 
-        if not is_chat:
-            if 'llama_cpp_system_message_language' in self.settings and self.settings['llama_cpp_system_message_language'] == 'Japanese':
-                system_message = """あなたは人間と会話するチャットボットです。
+        if 'llama_cpp_system_message_language' in self.settings and self.settings['llama_cpp_system_message_language'] == 'Japanese':
+            system_message = """あなたは人間と会話するチャットボットです。
 
 また、あなたはStable Diffusionで画像を生成する機能があります。
 その機能を実行する場合は、以下をあなたの返信内容に加えてください。
@@ -176,11 +199,9 @@ PROMPTは画像生成に使用するプロンプトに置き換えてくださ�
 この画像は返信メッセージの後に表示されます。
 このプロンプトが複数存在する場合は、最初のプロンプトの画像のみが生成されます。
 この画像生成機能に、記憶する機能は無いので、過去の会話内容も反映させてください。
-<|end_of_turn|>
-この内容を理解したら、以下の内容に返事をしてください:<|end_of_turn|>
 """
-            else:
-                system_message = """You are a chatbot having a conversation with a human.
+        else:
+            system_message = """You are a chatbot having a conversation with a human.
 
 You also have the function to generate image with Stable Diffusion.
 If you want to use this function, please add the following to your message.
@@ -197,9 +218,13 @@ For example, if you want to output "a school girl wearing a red ribbon", it woul
 The image is always output at the end, not at the location where it is added.
 If there are multiple entries, only the first one will be reflected.
 There is no memory function, so please carry over the prompts from past conversations.
-<|end_of_turn|>
-If you understand, please reply to the following:<|end_of_turn|>
 """
+
+        if not is_chat:
+            if 'llama_cpp_system_message_language' in self.settings and self.settings['llama_cpp_system_message_language'] == 'Japanese':
+                system_message += '<|end_of_turn|>\nこの内容を理解したら、以下の内容に返事をしてください:<|end_of_turn|>'
+            else:
+                system_message += '<|end_of_turn|>\nIf you understand, please reply to the following:<|end_of_turn|>'
 
             if self.backend == 'GPT4All':
                 self.prompt = TemplateMessagesPrompt(
@@ -215,23 +240,29 @@ If you understand, please reply to the following:<|end_of_turn|>
                     ai_template=ai_template_str,
                     input_variables=['history', 'input'],
                 )
+        else:
+            self.prompt = ChatPromptTemplate.from_messages([
+                ("system", system_message),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{input}"),
+            ])
 
-            self.llm_chain = ConversationChain(prompt=self.prompt, llm=self.llm, memory=self.memory)#, verbose=True)
+        self.llm_chain = ConversationChain(prompt=self.prompt, llm=self.llm, memory=self.memory)#, verbose=True)
 
-            def chat_predict(human_input):
-                if self.callback.is_cancel:
-                    self.callback.is_cancel = False
-                    return None
-                try:
-                    ret = self.llm_chain.invoke({
-                        'input': human_input,
-                    })
-                except asyncio.CancelledError:
-                    return None
-                #print(ret)
-                return ret['response']
+        def chat_predict(human_input):
+            if self.callback.is_cancel:
+                self.callback.is_cancel = False
+                return None
+            try:
+                ret = self.llm_chain.invoke({
+                    'input': human_input,
+                })
+            except asyncio.CancelledError:
+                return None
+            #print(ret)
+            return ret['response']
 
-            self.chat_predict = chat_predict
+        self.chat_predict = chat_predict
 
         self.is_inited = True
 
