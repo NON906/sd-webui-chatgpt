@@ -167,14 +167,17 @@ class LangChainApi:
         if self.backend == 'Ollama':
             if (not 'ollama_model' in self.settings) or (self.settings['ollama_model'] is None):
                 return
-            if not 'llama_cpp_n_gpu_layers' in self.settings:
-                self.settings['llama_cpp_n_gpu_layers'] = 20
+            if not 'ollama_num_gpu' in self.settings:
+                self.settings['ollama_num_gpu'] = 1
             if not 'llama_cpp_n_ctx' in self.settings:
                 self.settings['llama_cpp_n_ctx'] = 2048
+            if not 'ollama_keep_alive' in self.settings:
+                self.settings['ollama_keep_alive'] = '5m'
             self.llm = ChatOllama(
                 model=self.settings['ollama_model'],
-                num_gpu=int(self.settings['llama_cpp_n_gpu_layers']),
+                num_gpu=int(self.settings['ollama_num_gpu']),
                 num_ctx=int(self.settings['llama_cpp_n_ctx']),
+                keep_alive=self.settings['ollama_keep_alive'],
                 streaming=True,
                 callback_manager=AsyncCallbackManager([self.callback]),
                 #verbose=True,

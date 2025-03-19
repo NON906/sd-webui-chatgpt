@@ -501,9 +501,11 @@ def on_ui_tabs():
                     ollama_model = gr.Textbox(label='Model Name')
                 with gr.Row():
                     with gr.Column():
-                        ollama_n_gpu_layers = gr.Number(label='n_gpu_layers')
+                        ollama_n_gpu = gr.Number(label='num_gpu')
                     with gr.Column():
                         ollama_n_ctx = gr.Number(label='n_ctx')
+                    with gr.Column():
+                        ollama_keep_alive = gr.Textbox(label='keep_alive')
                 with gr.Row():
                     with gr.Column():
                         ollama_system_message_language = gr.Dropdown(value='English', allow_custom_value=False, label='System Message Language', choices=['English', 'Japanese'])
@@ -546,17 +548,18 @@ def on_ui_tabs():
                         chat_gpt_api.load_settings(**chatgpt_settings)
                     btn_gpt4all_save.click(fn=gpt4all_model_save, inputs=[gpt4all_model_file, gpt4all_prompt_template])
 
-        def ollama_save(name: str, n_gpu_layers: int, n_ctx: int, system_message_language: str):
+        def ollama_save(name: str, n_gpu: int, n_ctx: int, keep_alive: str, system_message_language: str):
             chatgpt_settings['ollama_model'] = name
-            chatgpt_settings['llama_cpp_n_gpu_layers'] = n_gpu_layers
+            chatgpt_settings['ollama_num_gpu'] = n_gpu
             chatgpt_settings['llama_cpp_n_ctx'] = n_ctx
+            chatgpt_settings['ollama_keep_alive'] = keep_alive
             chatgpt_settings['llama_cpp_system_message_language'] = system_message_language
             with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
                 json.dump(chatgpt_settings, f)
             chat_gpt_api.load_settings(**chatgpt_settings)
-            return n_gpu_layers, n_ctx, system_message_language
-        btn_ollama_save.click(fn=ollama_save, inputs=[ollama_model, ollama_n_gpu_layers, ollama_n_ctx, ollama_system_message_language],
-            outputs=[llama_cpp_n_gpu_layers, llama_cpp_n_ctx, llama_cpp_system_message_language])
+            return n_ctx, system_message_language
+        btn_ollama_save.click(fn=ollama_save, inputs=[ollama_model, ollama_n_gpu, ollama_n_ctx, ollama_keep_alive, ollama_system_message_language],
+            outputs=[llama_cpp_n_ctx, llama_cpp_system_message_language])
 
         def llama_cpp_save(path: str, n_gpu_layers: int, n_batch: int, n_ctx: int, full_template: str, human_template: str, ai_template: str, system_message_language: str):
             chatgpt_settings['llama_cpp_model'] = path
@@ -570,10 +573,10 @@ def on_ui_tabs():
             with open(get_path_settings_file('chatgpt_settings.json'), 'w') as f:
                 json.dump(chatgpt_settings, f)
             chat_gpt_api.load_settings(**chatgpt_settings)
-            return n_gpu_layers, n_ctx, system_message_language
+            return n_ctx, system_message_language
         btn_llama_cpp_save.click(fn=llama_cpp_save, inputs=[llama_cpp_model_file, llama_cpp_n_gpu_layers, llama_cpp_n_batch, llama_cpp_n_ctx,
             llama_cpp_full_template, llama_cpp_human_template, llama_cpp_ai_template, llama_cpp_system_message_language],
-            outputs=[ollama_n_gpu_layers, ollama_n_ctx, ollama_system_message_language])
+            outputs=[ollama_n_ctx, ollama_system_message_language])
 
         def setting_openai_api_tab_item_select():
             chatgpt_settings['backend'] = 'OpenAI API'
@@ -623,7 +626,7 @@ def on_ui_tabs():
             llama_cpp_full_template, llama_cpp_human_template, llama_cpp_ai_template,
             llama_cpp_n_ctx,
             gpt4all_model_file, btn_gpt4all_save, gpt4all_prompt_template,
-            ollama_model, ollama_n_gpu_layers, ollama_n_ctx, ollama_system_message_language,
+            ollama_model, ollama_n_gpu, ollama_n_ctx, ollama_keep_alive, ollama_system_message_language,
             txt_json_settings, btn_settings_save, btn_settings_reflect]
 
         btn_generate.click(
@@ -715,10 +718,14 @@ def on_ui_tabs():
                 chatgpt_settings['llama_cpp_system_message_language'] = 'English'
             if not 'gpt4all_prompt_template' in chatgpt_settings:
                 chatgpt_settings['gpt4all_prompt_template'] = 'Human: {prompt}<|end_of_turn|>AI: '
+            if not 'ollama_num_gpu' in chatgpt_settings:
+                chatgpt_settings['ollama_num_gpu'] = 1
+            if not 'ollama_keep_alive' in chatgpt_settings:
+                chatgpt_settings['ollama_keep_alive'] = '5m'
 
             ret = [apikey, chatgpt_settings['model'], json_settings, setting_part_tabs_out, save_file_path,
                 chatgpt_settings['llama_cpp_n_gpu_layers'], chatgpt_settings['llama_cpp_n_batch'], chatgpt_settings['llama_cpp_n_ctx'],
-                chatgpt_settings['llama_cpp_n_gpu_layers'], chatgpt_settings['llama_cpp_n_ctx']]
+                chatgpt_settings['ollama_num_gpu'], chatgpt_settings['llama_cpp_n_ctx'], chatgpt_settings['ollama_keep_alive']]
 
             for key in ['llama_cpp_model', 'gpt4all_model', 'llama_cpp_full_template', 'llama_cpp_human_template', 'llama_cpp_ai_template', 'llama_cpp_system_message_language', 'gpt4all_prompt_template', 'llama_cpp_system_message_language', 'ollama_model']:
                 if key in chatgpt_settings:
@@ -730,7 +737,7 @@ def on_ui_tabs():
 
         runner_interface.load(on_load, outputs=[txt_apikey, txt_chatgpt_model, txt_json_settings, setting_part_tabs, txt_file_path,
             llama_cpp_n_gpu_layers, llama_cpp_n_batch, llama_cpp_n_ctx,
-            ollama_n_gpu_layers, ollama_n_ctx,
+            ollama_n_gpu, ollama_n_ctx, ollama_keep_alive,
             llama_cpp_model_file, gpt4all_model_file,
             llama_cpp_full_template, llama_cpp_human_template, llama_cpp_ai_template, llama_cpp_system_message_language, gpt4all_prompt_template,
             ollama_system_message_language, ollama_model])
